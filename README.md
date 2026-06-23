@@ -15,6 +15,7 @@ The package provides one `fnpqnn` command surface for:
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -U pip
 .\.venv\Scripts\python -m pip install -e .
+.\.venv\Scripts\python -m pip install -e ".[cloud]"
 ```
 
 ## CLI examples
@@ -40,6 +41,9 @@ fnpqnn memory obsidian-init --tool codex --write
 fnpqnn memory obsidian-record --tool codex --title "YOLO Cerebrum Gate" --content "Map detections into Cerebrum events." --tag yolo --write
 fnpqnn memory obsidian-query --query "yolo cerebrum"
 fnpqnn memory obsidian-lvfm-stream --query "yolo cerebrum"
+fnpqnn cloud e2b-status
+fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-ingest-plan --tool codex --source https://example.com/data.csv --title "External data" --dry-run
 ```
 
 ## Design boundary
@@ -67,6 +71,37 @@ See `docs/ACTIVATION_HANDOFF.md`.
 
 The gateway only provides the handoff contract, paths, prompts, and simulator command surface.
 
+## Codex Native Handoff
+
+This gateway is designed so Codex can remain a native Codex agent while still
+controlling the simulator. The intended shape is:
+
+```text
+Codex native skills/plugins/git/debug workflow
+-> fnpqnn gateway activation and capability map
+-> allowlisted simulator CLI/HTTP commands
+-> optional Obsidian RAG admission
+-> simulator-owned Cerebrum/LVFM runtime
+```
+
+The gain is not that Codex replaces the simulator, or that the simulator
+absorbs Codex. The gain is that Codex can use its native coding ability to
+operate a quantum/neutrosophic simulator surface with clear gates, provenance,
+and handoff files.
+
+For example:
+
+```powershell
+fnpqnn gateway activate --tool codex --fingerprint fp-codex --accept-fingerprint --write
+fnpqnn gateway capability-map --tool codex
+fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create a simulator skill that designs safe LVFM gates." --dry-run
+```
+
+The same pattern exists for Antigravity/Gemini, Ollama/OpenClaw, Copilot,
+CodeProject.AI Server, and external agent platforms. Each native tool keeps its
+own skills and interface. The gateway provides the route, prompts, docs, and
+simulator-facing command contract.
+
 ## Obsidian RAG bridge
 
 `fnpqnn memory obsidian-*` creates a Markdown plus JSONL RAG surface under `.fnpqnn_gateway/obsidian_vault`. Native tools can admit memories into this vault, and the gateway/simulator can retrieve them later without scraping provider memory stores.
@@ -74,3 +109,47 @@ The gateway only provides the handoff contract, paths, prompts, and simulator co
 The LVFM stream command turns admitted notes into a candidate Cerebrum payload, so the Obsidian vault acts like a creek feeding the simulator's main LVFM river.
 
 See `docs/OBSIDIAN_RAG_BRIDGE.md`.
+
+## E2B Cloud Kit
+
+The gateway has an optional cloud extra for E2B:
+
+```powershell
+.\.venv\Scripts\python -m pip install -e ".[cloud]"
+```
+
+E2B is treated as an isolated compute lane for approved external data. It is
+not an AI account provider and it is not a replacement for the simulator. The
+current flow is:
+
+```text
+approved external source
+-> real E2B sandbox smoke or normalization job
+-> sanitized summary
+-> Obsidian RAG admission
+-> LVFM stream candidate
+-> simulator receives Cerebrum payload through its own API/CLI
+```
+
+Commands:
+
+```powershell
+fnpqnn cloud e2b-status
+fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-ingest-plan --tool codex --source https://example.com/data.csv --title "External data" --dry-run
+```
+
+The smoke command is real: when `E2B_API_KEY` is present in the approved dotenv
+or current environment, the gateway creates an E2B sandbox and runs a minimal
+Python marker command. Output includes a non-secret `sandbox_id` and
+`stdout_contains_expected_marker`; it never prints the key.
+
+The ingest plan does not fetch unapproved data. It creates the operational
+contract and the exact next commands for:
+
+- `fnpqnn memory obsidian-record`
+- `fnpqnn memory obsidian-lvfm-stream`
+
+The simulator-side encryption and LVFM conversion lives in the main
+`FNP-QNN-MVP` repo under `core/cloud_rag_bridge.py` and CLI commands
+`fnp-qnn cloud-kit rag-*`.

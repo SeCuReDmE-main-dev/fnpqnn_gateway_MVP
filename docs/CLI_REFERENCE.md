@@ -82,3 +82,18 @@ fnpqnn memory obsidian-lvfm-stream --query "yolo cerebrum"
 The Obsidian bridge is a Markdown plus JSONL persistent RAG surface. It receives explicit admissions from native tools; it does not scrape their private memory stores.
 
 `obsidian-lvfm-stream` converts matching admitted notes into a candidate Cerebrum/LVFM payload while leaving LVFM ownership inside the simulator.
+
+## Cloud / E2B
+
+```powershell
+fnpqnn cloud e2b-status
+fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-ingest-plan --tool codex --source https://example.com/data.csv --title "External data" --dry-run
+fnpqnn cloud e2b-ingest-plan --tool openclaw --source https://example.com/data.csv --title "External data" --write
+```
+
+`e2b-status` checks whether `e2b`, `e2b_code_interpreter`, and `E2B_API_KEY` are visible without printing secret values.
+
+`e2b-smoke` is a real E2B smoke path. It loads `E2B_API_KEY` from the approved dotenv or environment, creates a sandbox, runs a minimal Python marker, returns a non-secret sandbox id, and closes the sandbox.
+
+`e2b-ingest-plan` does not fetch external data. It builds the next-step contract for external data normalization, Obsidian admission, and LVFM stream handoff.
