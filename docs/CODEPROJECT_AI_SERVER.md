@@ -16,9 +16,26 @@ http://localhost:32168
 fnpqnn codeproject status --url http://localhost:32168
 fnpqnn codeproject mesh-status --url http://localhost:32168
 fnpqnn codeproject tunnel --url http://localhost:32168
+fnpqnn codeproject yolo-status --url http://localhost:32168
+fnpqnn codeproject yolo-training-status --url http://localhost:32168
 fnpqnn gateway run --hook codeproject-ai --codeproject-url http://localhost:32168
 fnpqnn gateway run --hook codeproject-ai-mesh --codeproject-url http://localhost:32168 --known-server ai-node-01
 ```
+
+## YOLO
+
+The gateway uses the documented CodeProject.AI object detection and training paths:
+
+- `POST /v1/vision/detection`
+- `POST /v1/vision/custom/<model-name>`
+- `POST /v1/vision/custom/list`
+- `POST /v1/train/create_dataset`
+- `POST /v1/train/train_model`
+- `POST /v1/train/resume_training`
+- `POST /v1/train/model_info`
+- `POST /v1/train/dataset_info`
+
+The explicit training module is `TrainingObjectDetectionYOLOv5` / `Training for YoloV5 6.2`.
 
 ## Mesh Guidance
 

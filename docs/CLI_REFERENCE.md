@@ -43,6 +43,10 @@ Supported options:
 fnpqnn codeproject status --url http://localhost:32168
 fnpqnn codeproject mesh-status --url http://localhost:32168 --known-server ai-node-01
 fnpqnn codeproject tunnel --url http://localhost:32168
+fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
+fnpqnn codeproject yolo-status --url http://localhost:32168 --image .\sample.jpg
+fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
+fnpqnn codeproject yolo-training-status --url http://localhost:32168 --model-name my-model
 ```
 
 The tunnel command validates a user-approved local or forwarded URL. It stores no credential and does not inspect VS Code secrets.

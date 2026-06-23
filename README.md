@@ -34,6 +34,8 @@ fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --write
 fnpqnn gateway capability-map --tool antigravity
 fnpqnn gateway capability-map --tool openclaw
 fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create simulator gate skills with native Codex tooling." --dry-run
+fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
+fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
 ```
 
 ## Design boundary
@@ -57,5 +59,6 @@ See `docs/ACTIVATION_HANDOFF.md`.
 - Ollama/OpenClaw uses native model/platform routing to help the simulator.
 - Copilot stays an IDE support surface while the simulator hook remains local.
 - CodeProject.AI Server stays an HTTP or mesh backend.
+- CodeProject.AI YOLO inference and `Training for YoloV5 6.2` use documented CodeProject.AI routes.
 
 The gateway only provides the handoff contract, paths, prompts, and simulator command surface.

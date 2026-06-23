@@ -61,10 +61,15 @@ NATIVE_TOOL_CAPABILITIES = {
     ),
     "codeproject-ai": (
         "Use CodeProject.AI HTTP modules as backend services.",
+        "Use CodeProject.AI YOLO/object-detection or instruct modules when installed and approved.",
+        "Use the explicit Training for YoloV5 6.2 module for custom YOLOv5 model training when installed.",
         "Keep native agent orchestration in the chosen IDE or agent platform.",
     ),
     "codeproject-ai-server": (
         "Use CodeProject.AI Server HTTP modules as backend services.",
+        "Use CodeProject.AI Server YOLO/object-detection or instruct modules when installed and approved.",
+        "Use the explicit Training for YoloV5 6.2 module for custom YOLOv5 model training when installed.",
+        "Transform YOLO/instruct outputs into simulator gate or Cerebrum runtime events through the native tool.",
         "Keep native agent orchestration in the chosen IDE or agent platform.",
     ),
     "codeproject-ai-mesh": (

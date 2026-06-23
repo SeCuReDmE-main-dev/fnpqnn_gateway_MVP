@@ -9,7 +9,7 @@ from typing import Any
 from . import __version__
 from .activation import activate, list_activation_routes
 from .capability_bridge import capability_map, skill_request
-from .codeproject_client import status as codeproject_status
+from .codeproject_client import status as codeproject_status, yolo_probe, yolo_training_probe
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
 from .natural_auth import copilot_status, provider_status
@@ -85,6 +85,16 @@ def build_parser() -> argparse.ArgumentParser:
     cp_tunnel = cp_sub.add_parser("tunnel", help="Validate a VS Code/IDE forwarded CodeProject.AI URL.")
     cp_tunnel.add_argument("--url", "--tunnel-url", dest="url", required=True)
     cp_tunnel.add_argument("--dry-run", action="store_true")
+    cp_yolo = cp_sub.add_parser("yolo-status", help="Check CodeProject.AI YOLO/instruct backend readiness.")
+    cp_yolo.add_argument("--url", default=DEFAULT_CODEPROJECT_URL)
+    cp_yolo.add_argument("--image")
+    cp_yolo.add_argument("--min-confidence", type=float, default=0.4)
+    cp_yolo.add_argument("--dry-run", action="store_true")
+    cp_yolo_train = cp_sub.add_parser("yolo-training-status", help="Check the explicit CodeProject.AI Training for YoloV5 6.2 module routes.")
+    cp_yolo_train.add_argument("--url", default=DEFAULT_CODEPROJECT_URL)
+    cp_yolo_train.add_argument("--model-name")
+    cp_yolo_train.add_argument("--dataset-name")
+    cp_yolo_train.add_argument("--dry-run", action="store_true")
 
     auth = sub.add_parser("auth", help="Natural auth status for external developer tools.")
     auth_sub = auth.add_subparsers(dest="auth_command", required=True)
@@ -174,6 +184,18 @@ def run_args(args: argparse.Namespace) -> int:
             return _print(mesh_status(args.url, known_servers=args.known_server, dry_run=args.dry_run), as_json)
         if args.codeproject_command == "tunnel":
             return _print(tunnel_status(args.url, dry_run=args.dry_run), as_json)
+        if args.codeproject_command == "yolo-status":
+            return _print(yolo_probe(args.url, dry_run=args.dry_run, image_path=args.image, min_confidence=args.min_confidence), as_json)
+        if args.codeproject_command == "yolo-training-status":
+            return _print(
+                yolo_training_probe(
+                    args.url,
+                    dry_run=args.dry_run,
+                    model_name=args.model_name,
+                    dataset_name=args.dataset_name,
+                ),
+                as_json,
+            )
     if args.section == "auth":
         if args.auth_command == "natural-login" and args.provider == "github-copilot":
             return _print(copilot_status(args.source), as_json)

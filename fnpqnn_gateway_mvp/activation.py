@@ -202,6 +202,7 @@ def _questions(route: ToolRoute) -> list[dict[str, str]]:
         base.append({"id": "provider_boundary", "question": f"What may the {route.auth_provider} login be used for in this workspace?"})
     if route.codeproject:
         base.append({"id": "backend_url", "question": "Which CodeProject.AI URL, tunnel, or mesh host is approved for this workspace?"})
+        base.append({"id": "yolo_instruct", "question": "Which YOLO/object-detection or Training for YoloV5 6.2 outputs should become simulator gate or Cerebrum runtime events?"})
     if route.support_only:
         base.append({"id": "ide_boundary", "question": "Which IDE actions can Copilot assist with while the simulator hook stays local?"})
     return base
@@ -301,6 +302,8 @@ def activation_plan(
                     "fnpqnn gateway hooks",
                     "fnpqnn gateway doctor --hook " + route.runtime_hook,
                     "fnpqnn gateway run --hook " + route.runtime_hook + " --dry-run",
+                    "fnpqnn codeproject yolo-status --url " + codeproject_url if route.codeproject else "codeproject-yolo-not-applicable",
+                    "fnpqnn codeproject yolo-training-status --url " + codeproject_url if route.codeproject else "codeproject-yolo-training-not-applicable",
                     "workspace AGENTS.md/SOUL.md/USER.md/MEMORY.md",
                     ".fnpqnn_gateway/activation.json",
                 ],

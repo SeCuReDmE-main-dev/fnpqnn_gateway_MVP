@@ -9,7 +9,7 @@ import unittest
 from fnpqnn_gateway_mvp.cli import main
 from fnpqnn_gateway_mvp.activation import activate, activation_plan, route_for_tool
 from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
-from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, status
+from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
 from fnpqnn_gateway_mvp.support import support_all
@@ -212,6 +212,30 @@ class GatewayCliTests(unittest.TestCase):
                 self.assertEqual(plan["gates"]["runtime_gate"]["hook"], hook)
                 self.assertEqual(bridge["runtime_hook"], hook)
                 self.assertEqual(bridge["bridge_model"], "non-absorbing capability bridge")
+
+    def test_codeproject_yolo_uses_official_routes(self) -> None:
+        payload = yolo_probe("http://localhost:32168", dry_run=True)
+        self.assertEqual(payload["method"], "POST")
+        self.assertEqual(payload["file_field"], "image")
+        self.assertIn("/v1/vision/detection", payload["routes"])
+        self.assertIn("/v1/vision/custom/list", payload["routes"])
+        self.assertIn("/v1/vision/custom/<model-name>", payload["routes"])
+
+    def test_codeproject_yolo_training_module_is_explicit(self) -> None:
+        payload = yolo_training_probe("http://localhost:32168", dry_run=True)
+        self.assertEqual(payload["module"]["module_id"], "TrainingObjectDetectionYOLOv5")
+        self.assertEqual(payload["module"]["name"], "Training for YoloV5 6.2")
+        self.assertEqual(YOLO_TRAINING_MODULE["version"], "1.7.0")
+        self.assertEqual(payload["routes"]["create_dataset"], "/v1/train/create_dataset")
+        self.assertEqual(payload["routes"]["train_model"], "/v1/train/train_model")
+        self.assertEqual(payload["routes"]["model_info"], "/v1/train/model_info")
+
+    def test_codeproject_yolo_training_cli_dry_run(self) -> None:
+        code, output = self.capture(["--json", "codeproject", "yolo-training-status", "--dry-run"])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["module"]["name"], "Training for YoloV5 6.2")
+        self.assertIn("train_model", payload["routes"])
 
 
 if __name__ == "__main__":
