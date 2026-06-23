@@ -37,6 +37,13 @@ fnpqnn codeproject status --url http://localhost:32168 --dry-run
 fnpqnn codeproject mesh-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject tunnel --url http://localhost:32168 --dry-run
 fnpqnn auth natural-login github-copilot --source auto
+fnpqnn auth systems
+fnpqnn auth login --system e2b --open-browser --dry-run
+fnpqnn auth login --system datadog --open-browser --dry-run
+fnpqnn auth login --system google --open-browser --dry-run
+fnpqnn auth login --system github --open-browser --dry-run
+fnpqnn auth login --system docker --open-browser --dry-run
+fnpqnn function auth-login --system cloud-kit --dry-run
 fnpqnn auth provider-routes
 fnpqnn auth model-switch --tool codex --fingerprint fp-123 --dry-run
 fnpqnn auth model-switch --last --dry-run
@@ -47,6 +54,9 @@ fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --write
 fnpqnn gateway capability-map --tool antigravity
 fnpqnn gateway capability-map --tool openclaw
 fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create simulator gate skills with native Codex tooling." --dry-run
+fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
+fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
+fnpqnn function skill-creator --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
 fnpqnn memory obsidian-init --tool codex --write
@@ -77,6 +87,12 @@ and `fnpqnn gateway start` reuses the last accepted profile. Profiles include
 `natural`, `codex`, `antigravity`, `vscode`, `ollama-cloud`, `openclaw`,
 `cloud-kit`, and `docker-kit`.
 
+`fnpqnn auth login` builds the web-auth hook wrapper for a selected system.
+It supports the bootstrap systems and direct account systems `e2b`, `datadog`,
+`google`, `github`, and `docker`. `--open-browser` opens the configured HTTPS
+login target, while validation confirms the wrapper stores no secret, reads no
+dotenv file, and never asks for a manual `.env` edit.
+
 `fnpqnn auth model-switch` and the function-style alias
 `fnpqnn function provider-switch` choose the model provider from a fingerprint
 route or from the last bootstrap. Provider switching is web-auth first. It does
@@ -85,6 +101,14 @@ belongs to the gateway and is allowed only after a successful web-auth
 fingerprint. If web auth and native login are unavailable, the fallback is
 `petit-yolo-instructions`, a small instruction path that tells the operator
 which provider web login to open without exposing secrets.
+
+`fnpqnn gateway skill-entry` and `fnpqnn gateway skill-create` turn the active
+bootstrap/fingerprint route into a companion skill contract. `skill-entry`
+writes entry and exit contracts under `.fnpqnn_gateway/skill_entries` and
+`.fnpqnn_gateway/skill_exits`. `skill-create` adds a SKILL.md plan with
+required frontmatter, validation commands, optional resource folders, and the
+same no-secret/no-provider-absorption boundary. The function-style alias is
+`fnpqnn function skill-creator`.
 
 ## Capability bridge
 

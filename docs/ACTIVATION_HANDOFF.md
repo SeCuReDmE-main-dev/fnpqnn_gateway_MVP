@@ -109,3 +109,31 @@ fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "
 ```
 
 The selected tool must execute its own skills/plugins. The simulator receives the result as gate artifacts, CLI/HTTP command plans, tests, and docs.
+
+## Skill Entry / Exit Contracts
+
+For companion skill creation, prefer the structured entry/exit flow:
+
+```powershell
+fnpqnn gateway skill-entry --name simulator-gate-builder --goal "Create simulator gate skills." --last --write
+fnpqnn gateway skill-create --name simulator-gate-builder --goal "Create simulator gate skills." --last --output-path .\skills --write
+fnpqnn function skill-creator --name simulator-gate-builder --goal "Create simulator gate skills." --last --write
+```
+
+`skill-entry` writes:
+
+- `.fnpqnn_gateway/skill_entries/<name>.json`
+- `.fnpqnn_gateway/skill_entries/<name>.md`
+- `.fnpqnn_gateway/skill_exits/<name>.json`
+- `.fnpqnn_gateway/skill_exits/<name>.md`
+
+The entry contract tells the companion what to produce. The exit contract is
+where the companion reports `created`, `planned`, or `blocked`, plus artifact
+paths and validation results.
+
+`skill-create` adds a SKILL.md creation plan with required `name` and
+`description` frontmatter, validation commands, optional `scripts`,
+`references`, and `assets` folders, and the selected bootstrap/fingerprint
+route. It supports `--last` or explicit `--profile`. It never stores secrets
+and never installs provider-specific assets unless `--write --create-files` is
+used intentionally.

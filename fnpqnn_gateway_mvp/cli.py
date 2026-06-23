@@ -23,6 +23,7 @@ from .natural_auth import copilot_status, provider_status
 from .neutrosophic_gate import p114_consensus
 from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
 from .runner import run_bootstrap_plan, run_hook
+from .skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from .support import support_all, support_provider
 from .tunnel import tunnel_status
 from .web_auth_login import auth_login, list_auth_login_systems
@@ -74,7 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_sub.add_parser("bootstrap-profiles", help="List persistent bootstrap profiles.")
     gateway_bootstrap = gateway_sub.add_parser("bootstrap", help="Accept a fingerprint and persist a reusable bootstrap profile.")
     gateway_bootstrap.add_argument("--profile", required=True, choices=[item["name"] for item in list_bootstrap_profiles()])
-    gateway_bootstrap.add_argument("--fingerprint", required=True)
+    gateway_bootstrap.add_argument("--fingerprint")
     gateway_bootstrap.add_argument("--accept-fingerprint", action="store_true")
     gateway_bootstrap.add_argument("--workspace", default=".")
     gateway_bootstrap.add_argument("--port", type=int, default=8000)
@@ -104,6 +105,30 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_skill.add_argument("--dry-run", action="store_true")
     gateway_skill.add_argument("--write", action="store_true")
     gateway_skill.add_argument("--force", action="store_true")
+    gateway_skill_entry = gateway_sub.add_parser("skill-entry", help="Create a skill entry/exit contract for a companion.")
+    gateway_skill_entry.add_argument("--name", required=True)
+    gateway_skill_entry.add_argument("--goal", required=True)
+    gateway_skill_entry.add_argument("--workspace", default=".")
+    gateway_skill_entry.add_argument("--profile", choices=[item["name"] for item in list_bootstrap_profiles()])
+    gateway_skill_entry.add_argument("--fingerprint")
+    gateway_skill_entry.add_argument("--last", action="store_true")
+    gateway_skill_entry.add_argument("--dry-run", action="store_true")
+    gateway_skill_entry.add_argument("--write", action="store_true")
+    gateway_skill_entry.add_argument("--force", action="store_true")
+    gateway_skill_create = gateway_sub.add_parser("skill-create", help="Create a complete skill creator handoff plan.")
+    gateway_skill_create.add_argument("--name", required=True)
+    gateway_skill_create.add_argument("--goal", required=True)
+    gateway_skill_create.add_argument("--workspace", default=".")
+    gateway_skill_create.add_argument("--profile", choices=[item["name"] for item in list_bootstrap_profiles()])
+    gateway_skill_create.add_argument("--fingerprint")
+    gateway_skill_create.add_argument("--last", action="store_true")
+    gateway_skill_create.add_argument("--output-path")
+    gateway_skill_create.add_argument("--resources", default="")
+    gateway_skill_create.add_argument("--examples", action="store_true")
+    gateway_skill_create.add_argument("--create-files", action="store_true")
+    gateway_skill_create.add_argument("--dry-run", action="store_true")
+    gateway_skill_create.add_argument("--write", action="store_true")
+    gateway_skill_create.add_argument("--force", action="store_true")
     gateway_activate = gateway_sub.add_parser("activate", help="Accept a fingerprint and activate the matching gateway route.")
     gateway_activate.add_argument("--tool", required=True)
     gateway_activate.add_argument("--fingerprint", required=True)
@@ -216,6 +241,20 @@ def build_parser() -> argparse.ArgumentParser:
     function_auth_login.add_argument("--dry-run", action="store_true")
     function_auth_login.add_argument("--write", action="store_true")
     function_auth_login.add_argument("--force", action="store_true")
+    function_skill_creator = function_sub.add_parser("skill-creator", help="Alias for gateway skill-create.")
+    function_skill_creator.add_argument("--name", required=True)
+    function_skill_creator.add_argument("--goal", required=True)
+    function_skill_creator.add_argument("--workspace", default=".")
+    function_skill_creator.add_argument("--profile", choices=[item["name"] for item in list_bootstrap_profiles()])
+    function_skill_creator.add_argument("--fingerprint")
+    function_skill_creator.add_argument("--last", action="store_true")
+    function_skill_creator.add_argument("--output-path")
+    function_skill_creator.add_argument("--resources", default="")
+    function_skill_creator.add_argument("--examples", action="store_true")
+    function_skill_creator.add_argument("--create-files", action="store_true")
+    function_skill_creator.add_argument("--dry-run", action="store_true")
+    function_skill_creator.add_argument("--write", action="store_true")
+    function_skill_creator.add_argument("--force", action="store_true")
 
     support = sub.add_parser("support", help="LLM-safe support diagnostics.")
     support_sub = support.add_subparsers(dest="support_command", required=True)
@@ -289,11 +328,14 @@ def run_args(args: argparse.Namespace) -> int:
         if args.gateway_command == "bootstrap-profiles":
             return _print({"success": True, "profiles": list_bootstrap_profiles()}, as_json)
         if args.gateway_command == "bootstrap":
+            fingerprint = args.fingerprint or f"dry-run-{args.profile}"
+            if not args.fingerprint and not args.dry_run:
+                raise ValueError("gateway bootstrap requires --fingerprint unless --dry-run is used")
             payload = bootstrap_profile(
                 args.profile,
-                args.fingerprint,
+                fingerprint,
                 workspace=args.workspace,
-                accept_fingerprint=args.accept_fingerprint,
+                accept_fingerprint=args.accept_fingerprint or args.dry_run,
                 port=args.port,
                 panel_port=args.panel_port,
                 codeproject_url=args.codeproject_url,
@@ -328,6 +370,34 @@ def run_args(args: argparse.Namespace) -> int:
                 ),
                 as_json,
             )
+        if args.gateway_command == "skill-entry":
+            payload = build_skill_entry(
+                name=args.name,
+                goal=args.goal,
+                workspace=args.workspace,
+                profile=args.profile,
+                fingerprint=args.fingerprint,
+                last=args.last,
+            )
+            if args.write and not args.dry_run:
+                payload = write_skill_entry(payload, force=args.force)
+            return _print(payload, as_json)
+        if args.gateway_command == "skill-create":
+            resources = [item.strip() for item in args.resources.split(",") if item.strip()]
+            payload = build_skill_creator_plan(
+                name=args.name,
+                goal=args.goal,
+                workspace=args.workspace,
+                profile=args.profile,
+                fingerprint=args.fingerprint,
+                last=args.last,
+                output_path=args.output_path,
+                resources=resources,
+                examples=args.examples,
+            )
+            if args.write and not args.dry_run:
+                payload = write_skill_creator_plan(payload, force=args.force, create_skill_files=args.create_files)
+            return _print(payload, as_json)
         if args.gateway_command == "activate":
             payload = activate(
                 tool=args.tool,
@@ -481,6 +551,22 @@ def run_args(args: argparse.Namespace) -> int:
                 ),
                 as_json,
             )
+        if args.function_command == "skill-creator":
+            resources = [item.strip() for item in args.resources.split(",") if item.strip()]
+            payload = build_skill_creator_plan(
+                name=args.name,
+                goal=args.goal,
+                workspace=args.workspace,
+                profile=args.profile,
+                fingerprint=args.fingerprint,
+                last=args.last,
+                output_path=args.output_path,
+                resources=resources,
+                examples=args.examples,
+            )
+            if args.write and not args.dry_run:
+                payload = write_skill_creator_plan(payload, force=args.force, create_skill_files=args.create_files)
+            return _print(payload, as_json)
     if args.section == "support":
         if args.support_command == "provider":
             return _print(support_provider(args.provider), as_json)

@@ -17,6 +17,7 @@ from fnpqnn_gateway_mvp.hooks import HOOKS
 from fnpqnn_gateway_mvp.model_provider import build_model_provider_switch, model_provider_switch
 from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
 from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
+from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
 from fnpqnn_gateway_mvp.web_auth_login import auth_login, list_auth_login_systems
@@ -208,6 +209,14 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         names = {profile["name"] for profile in payload["profiles"]}
         self.assertTrue({"natural", "vscode", "ollama-cloud", "openclaw", "cloud-kit", "docker-kit"}.issubset(names))
+
+    def test_gateway_bootstrap_profile_dry_run_can_omit_fingerprint(self) -> None:
+        code, output = self.capture(["--json", "gateway", "bootstrap", "--profile", "codex", "--dry-run"])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["profile"]["name"], "codex")
+        self.assertEqual(payload["activation"]["fingerprint"], "dry-run-codex")
 
     def test_gateway_activate_cli_dry_run(self) -> None:
         code, output = self.capture([
@@ -452,6 +461,127 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(payload["tool"], "codex")
         self.assertTrue(payload["dry_run"])
+
+    def test_skill_entry_builds_entry_exit_contract(self) -> None:
+        payload = build_skill_entry(
+            name="Test Skill",
+            goal="Create a test skill contract.",
+            profile="codex",
+            workspace=".",
+        )
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["skill_name"], "test-skill")
+        self.assertEqual(payload["contract"]["bootstrap_profile"], "codex")
+        self.assertEqual(payload["contract"]["tool"], "codex")
+        self.assertIn("do not expose secrets", payload["contract"]["forbidden_actions"])
+        self.assertTrue(payload["paths"]["entry_json"].endswith(".fnpqnn_gateway\\skill_entries\\test-skill.json") or payload["paths"]["entry_json"].endswith(".fnpqnn_gateway/skill_entries/test-skill.json"))
+
+    def test_skill_entry_write_creates_entry_and_exit_paths(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = build_skill_entry(
+                name="Test Skill",
+                goal="Create a test skill contract.",
+                profile="codex",
+                workspace=tmp,
+            )
+            result = write_skill_entry(payload)
+            self.assertFalse(result["dry_run"])
+            self.assertTrue(Path(payload["paths"]["entry_json"]).exists())
+            self.assertTrue(Path(payload["paths"]["entry_markdown"]).exists())
+            self.assertTrue(Path(payload["paths"]["exit_json"]).exists())
+            self.assertTrue(Path(payload["paths"]["exit_markdown"]).exists())
+
+    def test_skill_creator_plan_uses_last_bootstrap(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bootstrap("antigravity", "fp-gemini", workspace=tmp, accept_fingerprint=True)
+            payload = build_skill_creator_plan(
+                name="Gemini Skill",
+                goal="Create a Gemini companion skill.",
+                workspace=tmp,
+                last=True,
+            )
+            self.assertTrue(payload["success"])
+            self.assertEqual(payload["bootstrap_route"]["profile"], "antigravity")
+            self.assertEqual(payload["bootstrap_route"]["fingerprint"], "fp-gemini")
+            self.assertIn("SKILL.md", payload["creator_plan"]["skill_md"])
+            self.assertTrue(payload["creator_plan"]["skill_creator_rules"]["skill_md_required"])
+
+    def test_skill_creator_write_can_create_skill_files_when_requested(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = build_skill_creator_plan(
+                name="Created Skill",
+                goal="Create a real local skill file.",
+                profile="natural",
+                workspace=tmp,
+                output_path=Path(tmp) / "skills",
+                resources=["scripts"],
+            )
+            result = write_skill_creator_plan(payload, create_skill_files=True)
+            skill_md = Path(payload["creator_plan"]["skill_md"])
+            self.assertTrue(skill_md.exists())
+            content = skill_md.read_text(encoding="utf-8")
+            self.assertIn("name: created-skill", content)
+            self.assertTrue((skill_md.parent / "scripts").exists())
+
+    def test_gateway_skill_entry_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "gateway",
+            "skill-entry",
+            "--name",
+            "test-skill",
+            "--goal",
+            "Create a test skill contract",
+            "--profile",
+            "codex",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["skill_name"], "test-skill")
+        self.assertEqual(payload["bootstrap_route"]["profile"], "codex")
+
+    def test_gateway_skill_create_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "gateway",
+            "skill-create",
+            "--name",
+            "test-skill",
+            "--goal",
+            "Create a test skill contract",
+            "--profile",
+            "codex",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["skill_name"], "test-skill")
+        self.assertIn("creator_plan", payload)
+
+    def test_function_skill_creator_alias_cli(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "function",
+            "skill-creator",
+            "--name",
+            "test-skill",
+            "--goal",
+            "Create a test skill contract",
+            "--profile",
+            "codex",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["bootstrap_route"]["tool"], "codex")
+        self.assertIn("exit_contract", payload)
 
     def test_capability_map_cli(self) -> None:
         code, output = self.capture(["--json", "gateway", "capability-map", "--tool", "github-copilot"])

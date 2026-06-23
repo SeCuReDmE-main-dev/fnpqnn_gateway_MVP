@@ -22,6 +22,11 @@ fnpqnn gateway run --last --dry-run
 fnpqnn gateway capability-map --tool codex
 fnpqnn gateway capability-map --tool antigravity
 fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create simulator gate skills with native Codex tooling." --dry-run
+fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
+fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contract" --last --write
+fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
+fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --last --output-path .\skills --write
+fnpqnn function skill-creator --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --dry-run
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --write
 fnpqnn gateway doctor --hook simulator
@@ -54,6 +59,18 @@ Bootstrap profiles persist the last accepted route in `.fnpqnn_gateway/bootstrap
 foreground. Supported bootstrap profiles are `natural`, `codex`,
 `antigravity`, `vscode`, `ollama-cloud`, `openclaw`, `cloud-kit`, and
 `docker-kit`.
+
+`gateway skill-entry` creates `.fnpqnn_gateway/skill_entries/<name>.json`,
+`.fnpqnn_gateway/skill_entries/<name>.md`,
+`.fnpqnn_gateway/skill_exits/<name>.json`, and
+`.fnpqnn_gateway/skill_exits/<name>.md` when `--write` is used. The entry
+contract tells the companion what to build; the exit contract is where the
+companion reports `created`, `planned`, or `blocked` status.
+
+`gateway skill-create` extends that contract with a SKILL.md creation plan.
+It supports `--profile <profile>` or `--last`, optional `--output-path`, and
+optional `--resources scripts,references,assets`. It never installs
+provider-specific assets unless `--write --create-files` is explicitly used.
 
 ## CodeProject.AI
 
