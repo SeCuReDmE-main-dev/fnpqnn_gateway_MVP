@@ -9,6 +9,7 @@ from typing import Any
 from . import __version__
 from .activation import activate, list_activation_routes
 from .capability_bridge import capability_map, skill_request
+from .cloud_kit import e2b_ingest_plan, e2b_status
 from .codeproject_client import status as codeproject_status, yolo_probe, yolo_training_probe
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
@@ -152,6 +153,19 @@ def build_parser() -> argparse.ArgumentParser:
     obsidian_lvfm.add_argument("--workspace", default=".")
     obsidian_lvfm.add_argument("--vault")
     obsidian_lvfm.add_argument("--limit", type=int, default=5)
+
+    cloud = sub.add_parser("cloud", help="Optional cloud kit bridges for external data ingestion.")
+    cloud_sub = cloud.add_subparsers(dest="cloud_command", required=True)
+    cloud_sub.add_parser("e2b-status", help="Inspect E2B cloud kit readiness without printing secrets.")
+    e2b_plan = cloud_sub.add_parser("e2b-ingest-plan", help="Plan external data ingestion through E2B into Obsidian and LVFM.")
+    e2b_plan.add_argument("--tool", required=True)
+    e2b_plan.add_argument("--source", required=True)
+    e2b_plan.add_argument("--title", required=True)
+    e2b_plan.add_argument("--workspace", default=".")
+    e2b_plan.add_argument("--vault")
+    e2b_plan.add_argument("--dry-run", action="store_true")
+    e2b_plan.add_argument("--write", action="store_true")
+    e2b_plan.add_argument("--force", action="store_true")
     return parser
 
 
@@ -276,6 +290,22 @@ def run_args(args: argparse.Namespace) -> int:
             return _print(query_notes(args.query, args.workspace, args.vault, args.limit), as_json)
         if args.memory_command == "obsidian-lvfm-stream":
             return _print(lvfm_stream(args.query, args.workspace, args.vault, args.limit), as_json)
+    if args.section == "cloud":
+        if args.cloud_command == "e2b-status":
+            return _print(e2b_status(), as_json)
+        if args.cloud_command == "e2b-ingest-plan":
+            return _print(
+                e2b_ingest_plan(
+                    args.tool,
+                    args.source,
+                    args.title,
+                    workspace=args.workspace,
+                    vault=args.vault,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
     raise ValueError("unsupported command")
 
 
