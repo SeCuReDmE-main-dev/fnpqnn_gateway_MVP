@@ -7,6 +7,8 @@ from pathlib import Path
 import unittest
 
 from fnpqnn_gateway_mvp.cli import main
+from fnpqnn_gateway_mvp.activation import activate, activation_plan, route_for_tool
+from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, status
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
@@ -26,9 +28,13 @@ class GatewayCliTests(unittest.TestCase):
             "simulator",
             "codex",
             "gemini",
+            "antigravity",
+            "ollama",
             "ollama-cloud",
             "agent-platform",
+            "openclaw",
             "codeproject-ai",
+            "codeproject-ai-server",
             "codeproject-ai-mesh",
         }
         self.assertTrue(expected.issubset(set(HOOKS)))
@@ -83,6 +89,129 @@ class GatewayCliTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         runner_source = (root / "fnpqnn_gateway_mvp" / "runner.py").read_text(encoding="utf-8")
         self.assertNotIn("shell=True", runner_source)
+
+    def test_codex_fingerprint_accept_routes_to_codex_hook(self) -> None:
+        payload = activation_plan("codex", "fp-codex-123", workspace=".", accept_fingerprint=True)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["route"]["auth_provider"], "openai")
+        self.assertEqual(payload["gates"]["runtime_gate"]["hook"], "codex")
+        self.assertTrue(payload["gates"]["native_handoff_gate"]["agent_stays_native"])
+        self.assertIn("fnpqnn gateway hooks", payload["gates"]["native_handoff_gate"]["simulator_capabilities"])
+
+    def test_copilot_fingerprint_keeps_simulator_hook(self) -> None:
+        route = route_for_tool("github-copilot")
+        self.assertTrue(route.support_only)
+        payload = activation_plan("github-copilot", "fp-copilot-123", workspace=".", accept_fingerprint=True)
+        self.assertEqual(payload["route"]["auth_provider"], "github-copilot")
+        self.assertEqual(payload["gates"]["runtime_gate"]["hook"], "simulator")
+        self.assertTrue(payload["gates"]["runtime_gate"]["support_only"])
+
+    def test_fingerprint_without_acceptance_is_blocked(self) -> None:
+        payload = activation_plan("gemini", "fp-gemini-123", workspace=".", accept_fingerprint=False)
+        self.assertFalse(payload["success"])
+        self.assertIn("Fingerprint must be provided", payload["blocked_reason"])
+
+    def test_activation_write_creates_gateway_state(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = activate("ollama-cloud", "fp-ollama-123", workspace=tmp, accept_fingerprint=True, write=True)
+            self.assertTrue(payload["success"])
+            self.assertTrue(Path(payload["paths"]["activation"]).exists())
+            self.assertTrue(Path(payload["paths"]["agents"]).exists())
+            agents = Path(payload["paths"]["agents"]).read_text(encoding="utf-8")
+            self.assertIn("Native Takeover", agents)
+
+    def test_gateway_activate_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "gateway",
+            "activate",
+            "--tool",
+            "codex",
+            "--fingerprint",
+            "fp-codex-123",
+            "--accept-fingerprint",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["gates"]["runtime_gate"]["hook"], "codex")
+
+    def test_auth_fingerprint_accept_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "auth",
+            "fingerprint",
+            "accept",
+            "--tool",
+            "codeproject-ai",
+            "--fingerprint",
+            "fp-codeproject-123",
+            "--codeproject-url",
+            "http://localhost:32168",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["gates"]["runtime_gate"]["hook"], "codeproject-ai")
+        self.assertEqual(payload["codeproject_url"], "http://localhost:32168")
+
+    def test_capability_map_keeps_codex_and_simulator_separate(self) -> None:
+        payload = capability_map("codex", workspace=".")
+        self.assertEqual(payload["bridge_model"], "non-absorbing capability bridge")
+        self.assertIn("Codex", " ".join(payload["native_tool_owns"]))
+        self.assertIn("simulator", " ".join(payload["simulator_owns"]).lower())
+        self.assertIn("The simulator does not become the provider tool.", payload["non_absorption_rules"])
+
+    def test_skill_request_describes_native_handoff(self) -> None:
+        payload = skill_request("codex", "simulator gate builder", "Create a skill that designs simulator gates.", workspace=".")
+        self.assertTrue(payload["success"])
+        self.assertTrue(payload["native_handoff"]["native_tool_must_execute_own_skills"])
+        self.assertEqual(payload["native_handoff"]["runtime_hook"], "codex")
+        self.assertIn("Non-Absorption Rule", payload["markdown_preview"])
+
+    def test_skill_request_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "gateway",
+            "skill-request",
+            "--tool",
+            "codex",
+            "--name",
+            "simulator gate builder",
+            "--goal",
+            "Create gates for the simulator using native Codex skills.",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["tool"], "codex")
+        self.assertTrue(payload["dry_run"])
+
+    def test_capability_map_cli(self) -> None:
+        code, output = self.capture(["--json", "gateway", "capability-map", "--tool", "github-copilot"])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["runtime_hook"], "simulator")
+        self.assertIn("Copilot", " ".join(payload["native_tool_owns"]))
+
+    def test_requested_surfaces_have_activation_and_capability_routes(self) -> None:
+        expected = {
+            "antigravity": ("google", "antigravity"),
+            "codeproject-ai-server": (None, "codeproject-ai-server"),
+            "github-copilot": ("github-copilot", "simulator"),
+            "ollama": ("ollama", "ollama"),
+            "openclaw": (None, "openclaw"),
+        }
+        for tool, (provider, hook) in expected.items():
+            with self.subTest(tool=tool):
+                plan = activation_plan(tool, f"fp-{tool}", workspace=".", accept_fingerprint=True)
+                bridge = capability_map(tool, workspace=".")
+                self.assertEqual(plan["route"]["auth_provider"], provider)
+                self.assertEqual(plan["gates"]["runtime_gate"]["hook"], hook)
+                self.assertEqual(bridge["runtime_hook"], hook)
+                self.assertEqual(bridge["bridge_model"], "non-absorbing capability bridge")
 
 
 if __name__ == "__main__":

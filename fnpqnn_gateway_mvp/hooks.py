@@ -74,6 +74,20 @@ HOOKS: Mapping[str, HookSpec] = {
         preflight=(("fnp-qnn", "support", "provider", "google"), ("fnp-qnn", "agent", "wake-prompt", "google")),
         server_command=("fnp-qnn", "operator", "api", "serve"),
     ),
+    "antigravity": HookSpec(
+        name="antigravity",
+        kind="external-agent",
+        description="FNP-QNN simulator with Antigravity/Gemini IDE support preflight.",
+        preflight=(("fnp-qnn", "support", "provider", "google"), ("fnp-qnn", "agent", "wake-prompt", "antigravity")),
+        server_command=("fnp-qnn", "operator", "api", "serve"),
+    ),
+    "ollama": HookSpec(
+        name="ollama",
+        kind="external-agent",
+        description="FNP-QNN simulator with local Ollama support preflight.",
+        preflight=(("fnp-qnn", "support", "provider", "ollama"), ("fnp-qnn", "agent", "wake-prompt", "ollama")),
+        server_command=("fnp-qnn", "operator", "api", "serve"),
+    ),
     "ollama-cloud": HookSpec(
         name="ollama-cloud",
         kind="external-agent",
@@ -88,8 +102,21 @@ HOOKS: Mapping[str, HookSpec] = {
         preflight=(("fnp-qnn", "external-ai", "inspect-openclaw"), ("fnp-qnn", "mcp", "manifest")),
         server_command=("fnp-qnn", "operator", "api", "serve"),
     ),
+    "openclaw": HookSpec(
+        name="openclaw",
+        kind="external-agent",
+        description="OpenClaw-native platform preflight around FNP-QNN.",
+        preflight=(("fnp-qnn", "external-ai", "inspect-openclaw"), ("fnp-qnn", "mcp", "manifest")),
+        server_command=("fnp-qnn", "operator", "api", "serve"),
+    ),
     "codeproject-ai": HookSpec(
         name="codeproject-ai",
+        kind="ai-server",
+        description="Observe or validate one CodeProject.AI Server endpoint.",
+        codeproject=True,
+    ),
+    "codeproject-ai-server": HookSpec(
+        name="codeproject-ai-server",
         kind="ai-server",
         description="Observe or validate one CodeProject.AI Server endpoint.",
         codeproject=True,
@@ -113,4 +140,3 @@ def get_hook(name: str) -> HookSpec:
 
 def list_hooks() -> list[dict[str, object]]:
     return [HOOKS[name].as_dict() for name in sorted(HOOKS)]
-

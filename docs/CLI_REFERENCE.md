@@ -6,6 +6,12 @@ The installed console command is `fnpqnn`.
 
 ```powershell
 fnpqnn gateway hooks
+fnpqnn gateway activation-routes
+fnpqnn gateway capability-map --tool codex
+fnpqnn gateway capability-map --tool antigravity
+fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create simulator gate skills with native Codex tooling." --dry-run
+fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --dry-run
+fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --write
 fnpqnn gateway doctor --hook simulator
 fnpqnn gateway doctor --hook codeproject-ai --codeproject-url http://localhost:32168
 fnpqnn gateway doctor --hook codeproject-ai-mesh --known-server ai-node-01
@@ -27,6 +33,9 @@ Supported options:
 - `--jsonl` streams event records as JSON lines.
 - `--dry-run` prints the execution plan without starting a process.
 - `--no-preflight` skips simulator/provider preflight commands.
+- `--accept-fingerprint` is required by `gateway activate` before the route is considered open.
+- `--write` writes `.fnpqnn_gateway` state and onboarding files.
+- `--force` allows overwriting existing activation/onboarding files.
 
 ## CodeProject.AI
 
@@ -46,8 +55,12 @@ fnpqnn auth natural-login github-copilot --source vscode
 fnpqnn auth natural-login github-copilot --source copilot-cli
 fnpqnn auth natural-login github-copilot --source gh
 fnpqnn auth provider-status openai
+fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --dry-run
+fnpqnn auth fingerprint accept --tool gemini --fingerprint fp-123 --write
 fnpqnn support provider github-copilot
 fnpqnn support all
 ```
 
 Natural auth diagnostics report existing tool readiness. They never persist raw tokens.
+
+Fingerprint acceptance maps the approved login identity to the correct onboarding voice and runtime gate. The selected agent then continues in its native tool with simulator capabilities exposed by the gateway.

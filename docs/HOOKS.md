@@ -16,6 +16,21 @@ Runtime hooks are declared in `fnpqnn_gateway_mvp/hooks.py`.
 
 `github-copilot` is an auth/support provider. It is not a runtime hook in v1 because Copilot is an IDE/account assistant surface, not a direct simulator backend.
 
+## Activation Gate
+
+Hooks are selected by `fnpqnn gateway activate` after a fingerprint is accepted:
+
+- `codex` opens the `codex` hook and writes Codex-oriented onboarding.
+- `gemini` opens the `gemini` hook and writes Gemini/Antigravity-oriented onboarding.
+- `antigravity` opens the `antigravity` hook and writes IDE-native Antigravity onboarding.
+- `ollama` opens the `ollama` hook and writes local Ollama onboarding.
+- `ollama-cloud` opens the `ollama-cloud` hook and writes Ollama/OpenClaw-oriented onboarding.
+- `github-copilot` keeps the runtime hook on `simulator` and writes IDE-oriented onboarding.
+- `openclaw` opens the `openclaw` hook and writes OpenClaw-native onboarding.
+- `codeproject-ai` and `codeproject-ai-mesh` write backend/tunnel/mesh onboarding.
+
+The selected agent remains native. The gateway only exposes simulator capability paths, wake prompts, and hook commands.
+
 ## Safety Rules
 
 - Commands are represented as argv lists, not shell strings.

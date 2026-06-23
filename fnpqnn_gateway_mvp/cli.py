@@ -7,7 +7,8 @@ import json
 from typing import Any
 
 from . import __version__
-from .activation import activate, activation_plan, list_activation_routes
+from .activation import activate, list_activation_routes
+from .capability_bridge import capability_map, skill_request
 from .codeproject_client import status as codeproject_status
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
@@ -34,6 +35,17 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_sub = gateway.add_subparsers(dest="gateway_command", required=True)
     gateway_sub.add_parser("hooks", help="List runtime hooks.")
     gateway_sub.add_parser("activation-routes", help="List fingerprint-to-gateway activation routes.")
+    gateway_capability = gateway_sub.add_parser("capability-map", help="Show the native-tool/simulator capability split.")
+    gateway_capability.add_argument("--tool", required=True)
+    gateway_capability.add_argument("--workspace", default=".")
+    gateway_skill = gateway_sub.add_parser("skill-request", help="Create a native tool request for a simulator skill/gate.")
+    gateway_skill.add_argument("--tool", required=True)
+    gateway_skill.add_argument("--name", required=True)
+    gateway_skill.add_argument("--goal", required=True)
+    gateway_skill.add_argument("--workspace", default=".")
+    gateway_skill.add_argument("--dry-run", action="store_true")
+    gateway_skill.add_argument("--write", action="store_true")
+    gateway_skill.add_argument("--force", action="store_true")
     gateway_activate = gateway_sub.add_parser("activate", help="Accept a fingerprint and activate the matching gateway route.")
     gateway_activate.add_argument("--tool", required=True)
     gateway_activate.add_argument("--fingerprint", required=True)
@@ -108,6 +120,20 @@ def run_args(args: argparse.Namespace) -> int:
             return _print({"success": True, "hooks": list_hooks()}, as_json)
         if args.gateway_command == "activation-routes":
             return _print({"success": True, "routes": list_activation_routes()}, as_json)
+        if args.gateway_command == "capability-map":
+            return _print(capability_map(args.tool, workspace=args.workspace), as_json)
+        if args.gateway_command == "skill-request":
+            return _print(
+                skill_request(
+                    tool=args.tool,
+                    name=args.name,
+                    goal=args.goal,
+                    workspace=args.workspace,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
         if args.gateway_command == "activate":
             payload = activate(
                 tool=args.tool,
