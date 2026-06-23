@@ -4,9 +4,11 @@ Standalone gateway CLI for the FNP-QNN simulator MVP.
 
 The package provides one `fnpqnn` command surface for:
 
+- launching the branded simulator TUI through `fnpqnn --tui` when the simulator package is installed;
 - running or diagnosing gateway hooks for the simulator, Codex, Gemini, Ollama Cloud, external agent platforms, CodeProject.AI Server, and CodeProject.AI mesh;
 - checking natural auth readiness for OpenAI/ChatGPT, Google/Gemini, Ollama, and GitHub Copilot without storing raw tokens;
 - validating CodeProject.AI Server local, mesh, or tunnel URLs as HTTP backends;
+- admitting Obsidian RAG notes with p114 neutrosophic T/I/F gate metadata;
 - keeping the simulator usable without any AI account.
 
 ## Install for local development
@@ -21,6 +23,7 @@ python -m venv .venv
 ## CLI examples
 
 ```powershell
+fnpqnn --tui
 fnpqnn gateway hooks
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codeproject-ai --codeproject-url http://localhost:32168
@@ -39,6 +42,7 @@ fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
 fnpqnn memory obsidian-init --tool codex --write
 fnpqnn memory obsidian-record --tool codex --title "YOLO Cerebrum Gate" --content "Map detections into Cerebrum events." --tag yolo --write
+fnpqnn memory p114-consensus --item "verified evidence passed" --item "partial risk pending"
 fnpqnn memory obsidian-query --query "yolo cerebrum"
 fnpqnn memory obsidian-lvfm-stream --query "yolo cerebrum"
 fnpqnn cloud e2b-status
@@ -108,7 +112,39 @@ simulator-facing command contract.
 
 The LVFM stream command turns admitted notes into a candidate Cerebrum payload, so the Obsidian vault acts like a creek feeding the simulator's main LVFM river.
 
+Every `obsidian-record` admission now runs the local
+`p114_ffed_neutrosophic_consensus` gate by default when the FFeD pluginpack is
+available. The generated Markdown frontmatter includes:
+
+- `fnpqnn_t`;
+- `fnpqnn_i`;
+- `fnpqnn_f`;
+- `fnpqnn_df`;
+- `fnpqnn_gate`;
+- `fnpqnn_action`.
+
+The JSONL index carries the same gate payload, and `obsidian-lvfm-stream`
+forwards it as Cerebrum event metadata. This keeps the Obsidian path human
+readable while still giving the simulator a precise neutrosophic admission
+trace. Pass `--neutrosophic-gate none` only for low-level transport tests.
+
 See `docs/OBSIDIAN_RAG_BRIDGE.md`.
+
+## TUI Branding
+
+`fnpqnn --tui` delegates to the simulator Textual TUI when `fnp_qnn_cli` is
+installed in the active Python environment. The visual identity is derived from
+the simulator assets:
+
+- large source logo: `assets/logo/Logo version 2.png`;
+- small source logos: `assets/logo/Logo 3 .png`,
+  `assets/logo/banner small.png`, and `assets/logo/FNP-QNN logo.png`;
+- palette: ink navy, off-white paper, fine gold linework, and restrained
+  quantum-blue accents.
+
+The terminal uses an ASCII vector imprint rather than embedding PNG pixels, so
+the TUI remains portable across PowerShell, Windows Terminal, VS Code terminals,
+and remote tunnel sessions.
 
 ## E2B Cloud Kit
 
