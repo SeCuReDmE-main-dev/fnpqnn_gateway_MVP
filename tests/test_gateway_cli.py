@@ -12,6 +12,7 @@ from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
+from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
 
@@ -236,6 +237,71 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(payload["module"]["name"], "Training for YoloV5 6.2")
         self.assertIn("train_model", payload["routes"])
+
+    def test_obsidian_bridge_writes_and_queries_notes(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            init_payload = init_obsidian("codex", workspace=tmp, write=True)
+            self.assertTrue(init_payload["success"])
+            record_payload = record_note(
+                "codex",
+                "YOLO Cerebrum Gate",
+                "Map YOLO detections into Cerebrum runtime gate events.",
+                workspace=tmp,
+                tags=["yolo", "cerebrum"],
+                write=True,
+            )
+            self.assertTrue(record_payload["success"])
+            query_payload = query_notes("yolo cerebrum", workspace=tmp)
+            self.assertEqual(len(query_payload["results"]), 1)
+            self.assertIn("YOLO Cerebrum Gate", query_payload["results"][0]["title"])
+
+    def test_obsidian_cli_dry_run(self) -> None:
+        code, output = self.capture(["--json", "memory", "obsidian-init", "--tool", "openclaw", "--dry-run"])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["vault_semantics"], "obsidian-markdown-jsonl-rag")
+        self.assertFalse(payload["memory_contract"]["private_tool_store_scraping"])
+        self.assertEqual(payload["lvfm_stream_contract"]["target_layer"], "FNP-QNN LVFMRuntimeGraph via Cerebrum runtime")
+
+    def test_obsidian_lvfm_stream_builds_cerebrum_payload(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            init_obsidian("codeproject-ai-server", workspace=tmp, write=True)
+            record_note(
+                "codeproject-ai-server",
+                "CodeProject YOLO creek",
+                "YOLO detection should feed the LVFM river through Cerebrum runtime.",
+                workspace=tmp,
+                tags=["yolo", "lvfm"],
+                write=True,
+            )
+            payload = lvfm_stream("yolo lvfm", workspace=tmp)
+            self.assertEqual(payload["target_layer"], "lvfm-runtime-river")
+            self.assertEqual(payload["cerebrum_ingest_endpoint"], "POST /cerebrum/runtime/ingest")
+            self.assertEqual(len(payload["cerebrum_payload"]["memories"]), 1)
+            self.assertEqual(payload["events"][0]["metadata"]["bridge"], "obsidian-creek-to-lvfm-river")
+
+    def test_obsidian_lvfm_stream_cli(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            init_obsidian("codex", workspace=tmp, write=True)
+            record_note("codex", "LVFM note", "A note for LVFM stream.", workspace=tmp, tags=["lvfm"], write=True)
+            code, output = self.capture([
+                "--json",
+                "memory",
+                "obsidian-lvfm-stream",
+                "--query",
+                "lvfm",
+                "--workspace",
+                tmp,
+            ])
+            self.assertEqual(code, 0)
+            payload = json.loads(output)
+            self.assertEqual(payload["stream"], "obsidian-admission-creek")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from .codeproject_client import status as codeproject_status, yolo_probe, yolo_t
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
 from .natural_auth import copilot_status, provider_status
+from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
 from .runner import run_hook
 from .support import support_all, support_provider
 from .tunnel import tunnel_status
@@ -120,6 +121,37 @@ def build_parser() -> argparse.ArgumentParser:
     support_provider_parser = support_sub.add_parser("provider", help="Show provider support report.")
     support_provider_parser.add_argument("provider", choices=["openai", "google", "ollama", "github-copilot"])
     support_sub.add_parser("all", help="Show all provider support reports.")
+
+    memory = sub.add_parser("memory", help="Persistent gateway memory and Obsidian RAG bridge.")
+    memory_sub = memory.add_subparsers(dest="memory_command", required=True)
+    obsidian_init = memory_sub.add_parser("obsidian-init", help="Plan or create an Obsidian-style gateway RAG vault.")
+    obsidian_init.add_argument("--tool", required=True)
+    obsidian_init.add_argument("--workspace", default=".")
+    obsidian_init.add_argument("--vault")
+    obsidian_init.add_argument("--dry-run", action="store_true")
+    obsidian_init.add_argument("--write", action="store_true")
+    obsidian_init.add_argument("--force", action="store_true")
+    obsidian_record = memory_sub.add_parser("obsidian-record", help="Record an admitted native-tool or gateway memory note.")
+    obsidian_record.add_argument("--tool", required=True)
+    obsidian_record.add_argument("--title", required=True)
+    obsidian_record.add_argument("--content", required=True)
+    obsidian_record.add_argument("--workspace", default=".")
+    obsidian_record.add_argument("--vault")
+    obsidian_record.add_argument("--tag", action="append", default=[])
+    obsidian_record.add_argument("--source", default="gateway-note")
+    obsidian_record.add_argument("--dry-run", action="store_true")
+    obsidian_record.add_argument("--write", action="store_true")
+    obsidian_record.add_argument("--force", action="store_true")
+    obsidian_query = memory_sub.add_parser("obsidian-query", help="Query admitted Obsidian gateway RAG notes.")
+    obsidian_query.add_argument("--query", required=True)
+    obsidian_query.add_argument("--workspace", default=".")
+    obsidian_query.add_argument("--vault")
+    obsidian_query.add_argument("--limit", type=int, default=5)
+    obsidian_lvfm = memory_sub.add_parser("obsidian-lvfm-stream", help="Convert admitted Obsidian notes into a Cerebrum/LVFM candidate stream.")
+    obsidian_lvfm.add_argument("--query", required=True)
+    obsidian_lvfm.add_argument("--workspace", default=".")
+    obsidian_lvfm.add_argument("--vault")
+    obsidian_lvfm.add_argument("--limit", type=int, default=5)
     return parser
 
 
@@ -220,6 +252,30 @@ def run_args(args: argparse.Namespace) -> int:
             return _print(support_provider(args.provider), as_json)
         if args.support_command == "all":
             return _print(support_all(), as_json)
+    if args.section == "memory":
+        if args.memory_command == "obsidian-init":
+            if args.write and not args.dry_run:
+                return _print(init_obsidian(args.tool, args.workspace, args.vault, write=True, force=args.force), as_json)
+            return _print(obsidian_plan(args.tool, args.workspace, args.vault), as_json)
+        if args.memory_command == "obsidian-record":
+            return _print(
+                record_note(
+                    args.tool,
+                    args.title,
+                    args.content,
+                    workspace=args.workspace,
+                    vault=args.vault,
+                    tags=args.tag,
+                    source=args.source,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
+        if args.memory_command == "obsidian-query":
+            return _print(query_notes(args.query, args.workspace, args.vault, args.limit), as_json)
+        if args.memory_command == "obsidian-lvfm-stream":
+            return _print(lvfm_stream(args.query, args.workspace, args.vault, args.limit), as_json)
     raise ValueError("unsupported command")
 
 

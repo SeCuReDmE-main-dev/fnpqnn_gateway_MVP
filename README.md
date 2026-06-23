@@ -36,6 +36,10 @@ fnpqnn gateway capability-map --tool openclaw
 fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create simulator gate skills with native Codex tooling." --dry-run
 fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
+fnpqnn memory obsidian-init --tool codex --write
+fnpqnn memory obsidian-record --tool codex --title "YOLO Cerebrum Gate" --content "Map detections into Cerebrum events." --tag yolo --write
+fnpqnn memory obsidian-query --query "yolo cerebrum"
+fnpqnn memory obsidian-lvfm-stream --query "yolo cerebrum"
 ```
 
 ## Design boundary
@@ -62,3 +66,11 @@ See `docs/ACTIVATION_HANDOFF.md`.
 - CodeProject.AI YOLO inference and `Training for YoloV5 6.2` use documented CodeProject.AI routes.
 
 The gateway only provides the handoff contract, paths, prompts, and simulator command surface.
+
+## Obsidian RAG bridge
+
+`fnpqnn memory obsidian-*` creates a Markdown plus JSONL RAG surface under `.fnpqnn_gateway/obsidian_vault`. Native tools can admit memories into this vault, and the gateway/simulator can retrieve them later without scraping provider memory stores.
+
+The LVFM stream command turns admitted notes into a candidate Cerebrum payload, so the Obsidian vault acts like a creek feeding the simulator's main LVFM river.
+
+See `docs/OBSIDIAN_RAG_BRIDGE.md`.

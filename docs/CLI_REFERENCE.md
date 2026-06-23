@@ -68,3 +68,17 @@ fnpqnn support all
 Natural auth diagnostics report existing tool readiness. They never persist raw tokens.
 
 Fingerprint acceptance maps the approved login identity to the correct onboarding voice and runtime gate. The selected agent then continues in its native tool with simulator capabilities exposed by the gateway.
+
+## Memory / Obsidian
+
+```powershell
+fnpqnn memory obsidian-init --tool codex --dry-run
+fnpqnn memory obsidian-init --tool codex --write
+fnpqnn memory obsidian-record --tool codex --title "YOLO Cerebrum Gate" --content "Map detections into Cerebrum events." --tag yolo --tag cerebrum --write
+fnpqnn memory obsidian-query --query "yolo cerebrum"
+fnpqnn memory obsidian-lvfm-stream --query "yolo cerebrum"
+```
+
+The Obsidian bridge is a Markdown plus JSONL persistent RAG surface. It receives explicit admissions from native tools; it does not scrape their private memory stores.
+
+`obsidian-lvfm-stream` converts matching admitted notes into a candidate Cerebrum/LVFM payload while leaving LVFM ownership inside the simulator.
