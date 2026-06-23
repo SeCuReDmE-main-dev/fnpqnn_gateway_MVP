@@ -25,6 +25,11 @@ python -m venv .venv
 ```powershell
 fnpqnn --tui
 fnpqnn gateway hooks
+fnpqnn gateway bootstrap --profile natural --fingerprint fp-natural --accept-fingerprint
+fnpqnn gateway bootstrap --profile vscode --fingerprint fp-vscode --accept-fingerprint --codeproject-url http://localhost:32168
+fnpqnn gateway bootstrap --profile ollama-cloud --fingerprint fp-ollama --accept-fingerprint
+fnpqnn gateway bootstrap --profile openclaw --fingerprint fp-openclaw --accept-fingerprint
+fnpqnn gateway start --dry-run
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codeproject-ai --codeproject-url http://localhost:32168
 fnpqnn gateway run --hook codeproject-ai-mesh --known-server ai-node-01 --known-server ai-node-02
@@ -32,6 +37,10 @@ fnpqnn codeproject status --url http://localhost:32168 --dry-run
 fnpqnn codeproject mesh-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject tunnel --url http://localhost:32168 --dry-run
 fnpqnn auth natural-login github-copilot --source auto
+fnpqnn auth provider-routes
+fnpqnn auth model-switch --tool codex --fingerprint fp-123 --dry-run
+fnpqnn auth model-switch --last --dry-run
+fnpqnn function provider-switch --tool ollama-cloud --fingerprint fp-ollama --dry-run
 fnpqnn gateway activation-routes
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --dry-run
 fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --write
@@ -61,6 +70,21 @@ GitHub Copilot is exposed as an auth/support provider only. It is intentionally 
 After a natural login is approved, `fnpqnn auth fingerprint accept` maps the accepted fingerprint to the chosen tool, writes gateway state and onboarding files, then leaves the selected agent in its native surface. Codex uses Codex, Gemini uses Gemini/Antigravity, Ollama uses Ollama/OpenClaw, Copilot stays in the IDE, and the simulator functions are exposed through gateway state, docs, and runtime hook commands.
 
 See `docs/ACTIVATION_HANDOFF.md`.
+
+`fnpqnn gateway bootstrap` is the persistent launch form of the same contract.
+It writes `.fnpqnn_gateway/bootstrap.json` only after an accepted fingerprint,
+and `fnpqnn gateway start` reuses the last accepted profile. Profiles include
+`natural`, `codex`, `antigravity`, `vscode`, `ollama-cloud`, `openclaw`,
+`cloud-kit`, and `docker-kit`.
+
+`fnpqnn auth model-switch` and the function-style alias
+`fnpqnn function provider-switch` choose the model provider from a fingerprint
+route or from the last bootstrap. Provider switching is web-auth first. It does
+not ask the user to paste tokens or edit `.env`; any managed environment state
+belongs to the gateway and is allowed only after a successful web-auth
+fingerprint. If web auth and native login are unavailable, the fallback is
+`petit-yolo-instructions`, a small instruction path that tells the operator
+which provider web login to open without exposing secrets.
 
 ## Capability bridge
 

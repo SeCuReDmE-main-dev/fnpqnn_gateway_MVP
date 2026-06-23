@@ -14,9 +14,11 @@ import subprocess
 import sys
 from typing import Iterable
 
+from .cloud_kit import e2b_status, load_env_file
 from .codeproject_client import module_probe, status
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, HookSpec
+from .tunnel import tunnel_status
 
 
 def _emit(event: dict[str, object], jsonl: bool = False) -> None:
@@ -94,3 +96,49 @@ def run_hook(
         _emit({"source": hook.name, "level": "info", "message": line.rstrip()}, jsonl=jsonl)
     return int(proc.wait())
 
+
+def bootstrap_dry_run_plan(plan: dict[str, object]) -> dict[str, object]:
+    return {
+        "success": True,
+        "source": "bootstrap",
+        "profile": plan.get("profile"),
+        "runtime_hook": plan.get("runtime_hook"),
+        "command": plan.get("command"),
+        "codeproject_url": plan.get("codeproject_url"),
+        "known_servers": plan.get("known_servers", []),
+        "support_checks": plan.get("support_checks", {}),
+        "mutates_config": False,
+        "raw_token_stored": False,
+    }
+
+
+def run_bootstrap_plan(plan: dict[str, object], jsonl: bool = False, no_preflight: bool = False) -> int:
+    profile = plan.get("profile", {})
+    profile_name = profile.get("name", "bootstrap") if isinstance(profile, dict) else "bootstrap"
+    command = plan.get("command")
+    if not isinstance(command, list) or not all(isinstance(part, str) for part in command):
+        _emit({"source": profile_name, "level": "warn", "message": "No runnable bootstrap command."}, jsonl=jsonl)
+        return 1
+
+    if not no_preflight:
+        if profile_name == "vscode":
+            codeproject_url = str(plan.get("codeproject_url") or DEFAULT_CODEPROJECT_URL)
+            _emit(
+                {
+                    "source": "vscode-tunnel",
+                    "level": "info",
+                    "message": json.dumps(tunnel_status(codeproject_url, dry_run=True), sort_keys=True),
+                },
+                jsonl=jsonl,
+            )
+        if profile_name == "cloud-kit":
+            env_file = plan.get("env_file")
+            _emit({"source": "cloud-kit", "level": "info", "message": json.dumps(load_env_file(env_file), sort_keys=True)}, jsonl=jsonl)
+            _emit({"source": "cloud-kit", "level": "info", "message": json.dumps(e2b_status(), sort_keys=True)}, jsonl=jsonl)
+
+    _emit({"source": str(profile_name), "level": "info", "message": " ".join(command)}, jsonl=jsonl)
+    proc = subprocess.Popen(tuple(command), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        _emit({"source": str(profile_name), "level": "info", "message": line.rstrip()}, jsonl=jsonl)
+    return int(proc.wait())

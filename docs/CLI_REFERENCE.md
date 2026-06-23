@@ -7,6 +7,18 @@ The installed console command is `fnpqnn`.
 ```powershell
 fnpqnn gateway hooks
 fnpqnn gateway activation-routes
+fnpqnn gateway bootstrap-profiles
+fnpqnn gateway bootstrap --profile natural --fingerprint fp-natural --accept-fingerprint
+fnpqnn gateway bootstrap --profile codex --fingerprint fp-codex --accept-fingerprint
+fnpqnn gateway bootstrap --profile antigravity --fingerprint fp-antigravity --accept-fingerprint
+fnpqnn gateway bootstrap --profile vscode --fingerprint fp-vscode --accept-fingerprint --codeproject-url http://localhost:32168
+fnpqnn gateway bootstrap --profile ollama-cloud --fingerprint fp-ollama --accept-fingerprint
+fnpqnn gateway bootstrap --profile openclaw --fingerprint fp-openclaw --accept-fingerprint
+fnpqnn gateway bootstrap --profile cloud-kit --fingerprint fp-cloud --accept-fingerprint --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn gateway bootstrap --profile docker-kit --fingerprint fp-docker --accept-fingerprint
+fnpqnn gateway start --dry-run
+fnpqnn gateway run --profile natural --dry-run
+fnpqnn gateway run --last --dry-run
 fnpqnn gateway capability-map --tool codex
 fnpqnn gateway capability-map --tool antigravity
 fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create simulator gate skills with native Codex tooling." --dry-run
@@ -37,6 +49,12 @@ Supported options:
 - `--write` writes `.fnpqnn_gateway` state and onboarding files.
 - `--force` allows overwriting existing activation/onboarding files.
 
+Bootstrap profiles persist the last accepted route in `.fnpqnn_gateway/bootstrap.json`.
+`gateway start` reuses that state and streams the selected server in the
+foreground. Supported bootstrap profiles are `natural`, `codex`,
+`antigravity`, `vscode`, `ollama-cloud`, `openclaw`, `cloud-kit`, and
+`docker-kit`.
+
 ## CodeProject.AI
 
 ```powershell
@@ -59,6 +77,19 @@ fnpqnn auth natural-login github-copilot --source vscode
 fnpqnn auth natural-login github-copilot --source copilot-cli
 fnpqnn auth natural-login github-copilot --source gh
 fnpqnn auth provider-status openai
+fnpqnn auth systems
+fnpqnn auth login --system codex --dry-run
+fnpqnn auth login --system e2b --open-browser --dry-run
+fnpqnn auth login --system datadog --open-browser --dry-run
+fnpqnn auth login --system google --open-browser --dry-run
+fnpqnn auth login --system github --open-browser --dry-run
+fnpqnn auth login --system docker --open-browser --dry-run
+fnpqnn auth login --system all --dry-run
+fnpqnn function auth-login --system cloud-kit --dry-run
+fnpqnn auth provider-routes
+fnpqnn auth model-switch --tool codex --fingerprint fp-123 --dry-run
+fnpqnn auth model-switch --last --dry-run
+fnpqnn function provider-switch --tool ollama-cloud --fingerprint fp-ollama --dry-run
 fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --dry-run
 fnpqnn auth fingerprint accept --tool gemini --fingerprint fp-123 --write
 fnpqnn support provider github-copilot
@@ -68,6 +99,22 @@ fnpqnn support all
 Natural auth diagnostics report existing tool readiness. They never persist raw tokens.
 
 Fingerprint acceptance maps the approved login identity to the correct onboarding voice and runtime gate. The selected agent then continues in its native tool with simulator capabilities exposed by the gateway.
+
+`auth login` creates a web-auth hook wrapper per system. Supported systems
+include `natural`, `codex`, `antigravity`, `vscode`, `ollama-cloud`,
+`openclaw`, `cloud-kit`, `docker-kit`, `codeproject-ai`, plus direct account
+surfaces `e2b`, `datadog`, `google`, `github`, and `docker`. `--open-browser`
+opens the system login URL. Validation checks that the hook uses HTTPS where a
+provider login exists, stores no secret, reads no dotenv file, and requires no
+manual `.env` edit.
+
+`auth model-switch` and `function provider-switch` select the model provider
+from either an explicit fingerprint route or the last accepted bootstrap. The
+switch is web-auth first, then native login, then `petit-yolo-instructions`.
+It never asks the user to paste a token, never asks the user to edit `.env`,
+and does not read dotenv files for provider switching. Any managed environment
+state is considered gateway-owned and may be produced only after a successful
+web-auth fingerprint.
 
 ## Memory / Obsidian
 

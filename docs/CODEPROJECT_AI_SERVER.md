@@ -58,3 +58,14 @@ For Docker mesh use, publish both TCP and UDP:
 ## Tunnel Boundary
 
 VS Code tunnels, dev tunnels, remote IDE forwarded ports, and network aliases are treated as transport to a user-approved URL. The gateway does not control VS Code and does not read IDE credential stores.
+
+The `vscode` bootstrap profile combines this tunnel boundary with Copilot as a
+support-only auth surface:
+
+```powershell
+fnpqnn gateway bootstrap --profile vscode --fingerprint fp-vscode --accept-fingerprint --codeproject-url http://localhost:32168
+fnpqnn gateway start --dry-run
+```
+
+The profile validates the approved CodeProject.AI Server URL as transport
+metadata and keeps the simulator runtime on the natural local hook.

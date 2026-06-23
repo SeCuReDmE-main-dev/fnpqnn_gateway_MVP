@@ -34,6 +34,13 @@ List routes:
 fnpqnn gateway activation-routes
 ```
 
+Persist and reuse a launch profile:
+
+```powershell
+fnpqnn gateway bootstrap --profile natural --fingerprint fp-natural --accept-fingerprint
+fnpqnn gateway start
+```
+
 ## Route Table
 
 | Tool | Auth provider | Runtime hook | Native handoff |
@@ -51,11 +58,25 @@ fnpqnn gateway activation-routes
 | `codeproject-ai-server` | none | `codeproject-ai-server` | CodeProject.AI Server remains HTTP backend |
 | `codeproject-ai-mesh` | none | `codeproject-ai-mesh` | CodeProject.AI remains mesh backend |
 
+## Bootstrap Profiles
+
+| Profile | Activation route | Runtime behavior |
+| --- | --- | --- |
+| `natural` | `simulator` | Starts the natural simulator API |
+| `codex` | `codex` | Runs Codex/OpenAI preflight, then starts simulator API |
+| `antigravity` | `antigravity` | Runs Google/Antigravity preflight, then starts simulator API |
+| `vscode` | `github-copilot` + CodeProject.AI tunnel metadata | Keeps Copilot support-only and validates the approved CodeProject.AI Server URL |
+| `ollama-cloud` | `ollama-cloud` | Runs Ollama support preflight, then starts simulator API |
+| `openclaw` | `openclaw` | Runs OpenClaw/MCP preflight, then starts simulator API |
+| `cloud-kit` | `openclaw` | Checks E2B/CloudKit readiness, then starts simulator API |
+| `docker-kit` | `simulator` | Runs `docker compose up --build simulator-api simulator-panel` |
+
 ## Files Written On `--write`
 
 The activation layer writes:
 
 - `.fnpqnn_gateway/activation.json`
+- `.fnpqnn_gateway/bootstrap.json` when `gateway bootstrap` is used
 - `.fnpqnn_gateway/gates/<tool>.json`
 - `.fnpqnn_gateway/onboarding/<tool>.json`
 - `.fnpqnn_gateway/prompts/<tool>_wake_prompt.md`

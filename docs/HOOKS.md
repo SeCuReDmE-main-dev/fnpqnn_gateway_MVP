@@ -8,6 +8,7 @@ Runtime hooks are declared in `fnpqnn_gateway_mvp/hooks.py`.
 - `codex`: checks OpenAI/Codex support and emits the Codex wake prompt path before simulator launch.
 - `gemini`: checks Google/Gemini support and emits the Gemini wake prompt path before simulator launch.
 - `ollama-cloud`: checks Ollama support and emits the Ollama wake prompt path before simulator launch.
+- `openclaw`: checks OpenClaw/MCP surfaces before simulator launch.
 - `agent-platform`: checks external agent platform surfaces such as OpenClaw/MCP manifests.
 - `codeproject-ai`: observes or calls one CodeProject.AI Server HTTP backend.
 - `codeproject-ai-mesh`: observes or calls a CodeProject.AI Server mesh backend and prints mesh guidance.
@@ -30,6 +31,23 @@ Hooks are selected by `fnpqnn gateway activate` after a fingerprint is accepted:
 - `codeproject-ai` and `codeproject-ai-mesh` write backend/tunnel/mesh onboarding.
 
 The selected agent remains native. The gateway only exposes simulator capability paths, wake prompts, and hook commands.
+
+## Bootstrap And Start
+
+`fnpqnn gateway bootstrap` stores the accepted route in
+`.fnpqnn_gateway/bootstrap.json`. `fnpqnn gateway start` reads that file and
+launches the selected runtime in the foreground.
+
+Bootstrap profile mapping:
+
+- `natural` -> `simulator`
+- `codex` -> `codex`
+- `antigravity` -> `antigravity`
+- `vscode` -> Copilot support-only plus CodeProject.AI Server tunnel metadata
+- `ollama-cloud` -> `ollama-cloud`
+- `openclaw` -> `openclaw`
+- `cloud-kit` -> OpenClaw route plus E2B/CloudKit preflight
+- `docker-kit` -> Docker Compose simulator API and Panel
 
 ## Safety Rules
 

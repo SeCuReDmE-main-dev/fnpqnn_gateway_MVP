@@ -11,17 +11,21 @@ from typing import Any
 
 from . import __version__
 from .activation import activate, list_activation_routes
+from .bootstrap import bootstrap as bootstrap_profile
+from .bootstrap import bootstrap_dry_run_plan, build_bootstrap_plan, list_bootstrap_profiles, start_bootstrap
 from .capability_bridge import capability_map, skill_request
 from .cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from .codeproject_client import status as codeproject_status, yolo_probe, yolo_training_probe
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
+from .model_provider import list_model_provider_routes, model_provider_switch
 from .natural_auth import copilot_status, provider_status
 from .neutrosophic_gate import p114_consensus
 from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
-from .runner import run_hook
+from .runner import run_bootstrap_plan, run_hook
 from .support import support_all, support_provider
 from .tunnel import tunnel_status
+from .web_auth_login import auth_login, list_auth_login_systems
 
 
 def _launch_simulator_tui() -> int:
@@ -67,6 +71,28 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_sub = gateway.add_subparsers(dest="gateway_command", required=True)
     gateway_sub.add_parser("hooks", help="List runtime hooks.")
     gateway_sub.add_parser("activation-routes", help="List fingerprint-to-gateway activation routes.")
+    gateway_sub.add_parser("bootstrap-profiles", help="List persistent bootstrap profiles.")
+    gateway_bootstrap = gateway_sub.add_parser("bootstrap", help="Accept a fingerprint and persist a reusable bootstrap profile.")
+    gateway_bootstrap.add_argument("--profile", required=True, choices=[item["name"] for item in list_bootstrap_profiles()])
+    gateway_bootstrap.add_argument("--fingerprint", required=True)
+    gateway_bootstrap.add_argument("--accept-fingerprint", action="store_true")
+    gateway_bootstrap.add_argument("--workspace", default=".")
+    gateway_bootstrap.add_argument("--port", type=int, default=8000)
+    gateway_bootstrap.add_argument("--panel-port", type=int, default=5006)
+    gateway_bootstrap.add_argument("--codeproject-url", default=DEFAULT_CODEPROJECT_URL)
+    gateway_bootstrap.add_argument("--known-server", action="append", default=[])
+    gateway_bootstrap.add_argument("--env-file", default=None)
+    gateway_bootstrap.add_argument("--dry-run", action="store_true")
+    gateway_bootstrap.add_argument("--force", action="store_true")
+    gateway_start = gateway_sub.add_parser("start", help="Start the last accepted bootstrap profile.")
+    gateway_start.add_argument("--workspace", default=".")
+    gateway_start.add_argument("--profile", choices=[item["name"] for item in list_bootstrap_profiles()])
+    gateway_start.add_argument("--port", type=int, default=None)
+    gateway_start.add_argument("--codeproject-url", default=None)
+    gateway_start.add_argument("--known-server", action="append", default=[])
+    gateway_start.add_argument("--jsonl", action="store_true")
+    gateway_start.add_argument("--dry-run", action="store_true")
+    gateway_start.add_argument("--no-preflight", action="store_true")
     gateway_capability = gateway_sub.add_parser("capability-map", help="Show the native-tool/simulator capability split.")
     gateway_capability.add_argument("--tool", required=True)
     gateway_capability.add_argument("--workspace", default=".")
@@ -89,7 +115,10 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_activate.add_argument("--write", action="store_true")
     gateway_activate.add_argument("--force", action="store_true")
     gateway_run = gateway_sub.add_parser("run", help="Run a gateway hook and stream logs.")
-    gateway_run.add_argument("--hook", required=True)
+    gateway_run.add_argument("--hook")
+    gateway_run.add_argument("--profile", choices=[item["name"] for item in list_bootstrap_profiles()])
+    gateway_run.add_argument("--last", action="store_true", help="Run the last accepted bootstrap profile.")
+    gateway_run.add_argument("--workspace", default=".")
     gateway_run.add_argument("--host", default="127.0.0.1")
     gateway_run.add_argument("--port", type=int, default=8000)
     gateway_run.add_argument("--codeproject-url", default=DEFAULT_CODEPROJECT_URL)
@@ -135,6 +164,16 @@ def build_parser() -> argparse.ArgumentParser:
     natural.add_argument("--source", choices=["auto", "vscode", "copilot-cli", "gh"], default="auto")
     provider = auth_sub.add_parser("provider-status", help="Show one provider auth status.")
     provider.add_argument("provider", choices=["openai", "google", "ollama", "github-copilot"])
+    auth_sub.add_parser("systems", help="List web-auth login systems.")
+    auth_login_parser = auth_sub.add_parser("login", help="Build a web-auth login handoff for one gateway system.")
+    auth_login_parser.add_argument("--system", required=True)
+    auth_login_parser.add_argument("--fingerprint")
+    auth_login_parser.add_argument("--accept-fingerprint", action="store_true")
+    auth_login_parser.add_argument("--workspace", default=".")
+    auth_login_parser.add_argument("--open-browser", action="store_true")
+    auth_login_parser.add_argument("--dry-run", action="store_true")
+    auth_login_parser.add_argument("--write", action="store_true")
+    auth_login_parser.add_argument("--force", action="store_true")
     fingerprint = auth_sub.add_parser("fingerprint", help="Fingerprint approval and handoff commands.")
     fingerprint_sub = fingerprint.add_subparsers(dest="fingerprint_command", required=True)
     fingerprint_accept = fingerprint_sub.add_parser("accept", help="Accept a login fingerprint and build the gateway activation plan.")
@@ -146,6 +185,37 @@ def build_parser() -> argparse.ArgumentParser:
     fingerprint_accept.add_argument("--dry-run", action="store_true")
     fingerprint_accept.add_argument("--write", action="store_true")
     fingerprint_accept.add_argument("--force", action="store_true")
+    auth_sub.add_parser("provider-routes", help="List model provider/auth source routes.")
+    model_switch = auth_sub.add_parser("model-switch", help="Switch model provider/auth source from a fingerprint route.")
+    model_switch.add_argument("--tool")
+    model_switch.add_argument("--fingerprint")
+    model_switch.add_argument("--last", action="store_true", help="Resolve tool and fingerprint from the last gateway bootstrap.")
+    model_switch.add_argument("--workspace", default=".")
+    model_switch.add_argument("--source", choices=["auto", "web-auth", "native-login", "petit-yolo-instructions"], default="auto")
+    model_switch.add_argument("--dry-run", action="store_true")
+    model_switch.add_argument("--write", action="store_true")
+    model_switch.add_argument("--force", action="store_true")
+
+    function = sub.add_parser("function", help="Function-style gateway operations for companion CLIs.")
+    function_sub = function.add_subparsers(dest="function_command", required=True)
+    provider_switch = function_sub.add_parser("provider-switch", help="Alias for auth model-switch.")
+    provider_switch.add_argument("--tool")
+    provider_switch.add_argument("--fingerprint")
+    provider_switch.add_argument("--last", action="store_true")
+    provider_switch.add_argument("--workspace", default=".")
+    provider_switch.add_argument("--source", choices=["auto", "web-auth", "native-login", "petit-yolo-instructions"], default="auto")
+    provider_switch.add_argument("--dry-run", action="store_true")
+    provider_switch.add_argument("--write", action="store_true")
+    provider_switch.add_argument("--force", action="store_true")
+    function_auth_login = function_sub.add_parser("auth-login", help="Alias for auth login.")
+    function_auth_login.add_argument("--system", required=True)
+    function_auth_login.add_argument("--fingerprint")
+    function_auth_login.add_argument("--accept-fingerprint", action="store_true")
+    function_auth_login.add_argument("--workspace", default=".")
+    function_auth_login.add_argument("--open-browser", action="store_true")
+    function_auth_login.add_argument("--dry-run", action="store_true")
+    function_auth_login.add_argument("--write", action="store_true")
+    function_auth_login.add_argument("--force", action="store_true")
 
     support = sub.add_parser("support", help="LLM-safe support diagnostics.")
     support_sub = support.add_subparsers(dest="support_command", required=True)
@@ -216,6 +286,34 @@ def run_args(args: argparse.Namespace) -> int:
             return _print({"success": True, "hooks": list_hooks()}, as_json)
         if args.gateway_command == "activation-routes":
             return _print({"success": True, "routes": list_activation_routes()}, as_json)
+        if args.gateway_command == "bootstrap-profiles":
+            return _print({"success": True, "profiles": list_bootstrap_profiles()}, as_json)
+        if args.gateway_command == "bootstrap":
+            payload = bootstrap_profile(
+                args.profile,
+                args.fingerprint,
+                workspace=args.workspace,
+                accept_fingerprint=args.accept_fingerprint,
+                port=args.port,
+                panel_port=args.panel_port,
+                codeproject_url=args.codeproject_url,
+                known_servers=args.known_server,
+                env_file=args.env_file,
+                dry_run=args.dry_run,
+                force=args.force,
+            )
+            return _print(payload, as_json)
+        if args.gateway_command == "start":
+            return start_bootstrap(
+                workspace=args.workspace,
+                profile=args.profile,
+                port=args.port,
+                codeproject_url=args.codeproject_url,
+                known_servers=args.known_server,
+                jsonl=args.jsonl,
+                dry_run=args.dry_run,
+                no_preflight=args.no_preflight,
+            )
         if args.gateway_command == "capability-map":
             return _print(capability_map(args.tool, workspace=args.workspace), as_json)
         if args.gateway_command == "skill-request":
@@ -252,6 +350,31 @@ def run_args(args: argparse.Namespace) -> int:
                 payload = {"success": True, "hook": hook.as_dict(), "dry_run": True}
             return _print(payload, as_json)
         if args.gateway_command == "run":
+            if args.last:
+                return start_bootstrap(
+                    workspace=args.workspace,
+                    port=args.port,
+                    codeproject_url=args.codeproject_url,
+                    known_servers=args.known_server,
+                    jsonl=args.jsonl,
+                    dry_run=args.dry_run,
+                    no_preflight=args.no_preflight,
+                )
+            if args.profile:
+                plan = build_bootstrap_plan(
+                    args.profile,
+                    f"profile-run-{args.profile}",
+                    workspace=args.workspace,
+                    accept_fingerprint=True,
+                    port=args.port,
+                    codeproject_url=args.codeproject_url,
+                    known_servers=args.known_server,
+                )
+                if args.dry_run:
+                    return _print(bootstrap_dry_run_plan(plan), as_json)
+                return run_bootstrap_plan(plan, jsonl=args.jsonl, no_preflight=args.no_preflight)
+            if not args.hook:
+                raise ValueError("gateway run requires --hook, --profile, or --last")
             hook = get_hook("codeproject-ai-mesh" if args.mesh and args.hook == "codeproject-ai" else args.hook)
             return run_hook(
                 hook,
@@ -289,6 +412,21 @@ def run_args(args: argparse.Namespace) -> int:
             return _print(provider_status(args.provider), as_json)
         if args.auth_command == "provider-status":
             return _print(provider_status(args.provider), as_json)
+        if args.auth_command == "systems":
+            return _print({"success": True, "systems": list_auth_login_systems()}, as_json)
+        if args.auth_command == "login":
+            return _print(
+                auth_login(
+                    args.system,
+                    workspace=args.workspace,
+                    fingerprint=args.fingerprint,
+                    accept_fingerprint=args.accept_fingerprint,
+                    open_browser=args.open_browser,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
         if args.auth_command == "fingerprint" and args.fingerprint_command == "accept":
             payload = activate(
                 tool=args.tool,
@@ -301,6 +439,48 @@ def run_args(args: argparse.Namespace) -> int:
                 force=args.force,
             )
             return _print(payload, as_json)
+        if args.auth_command == "provider-routes":
+            return _print({"success": True, "routes": list_model_provider_routes()}, as_json)
+        if args.auth_command == "model-switch":
+            return _print(
+                model_provider_switch(
+                    tool=args.tool,
+                    fingerprint=args.fingerprint,
+                    workspace=args.workspace,
+                    last=args.last,
+                    source=args.source,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
+    if args.section == "function":
+        if args.function_command == "provider-switch":
+            return _print(
+                model_provider_switch(
+                    tool=args.tool,
+                    fingerprint=args.fingerprint,
+                    workspace=args.workspace,
+                    last=args.last,
+                    source=args.source,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
+        if args.function_command == "auth-login":
+            return _print(
+                auth_login(
+                    args.system,
+                    workspace=args.workspace,
+                    fingerprint=args.fingerprint,
+                    accept_fingerprint=args.accept_fingerprint,
+                    open_browser=args.open_browser,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
     if args.section == "support":
         if args.support_command == "provider":
             return _print(support_provider(args.provider), as_json)

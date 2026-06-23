@@ -167,6 +167,11 @@ TOOL_ROUTES: dict[str, ToolRoute] = {
     ),
 }
 
+TOOL_ALIASES = {
+    "natural": "simulator",
+    "vscode": "github-copilot",
+}
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -239,7 +244,7 @@ def _agent_doc_content(route: ToolRoute, fingerprint: str, paths: dict[str, str]
 
 
 def route_for_tool(tool: str) -> ToolRoute:
-    normalized = tool.strip().lower()
+    normalized = TOOL_ALIASES.get(tool.strip().lower(), tool.strip().lower())
     if normalized not in TOOL_ROUTES:
         allowed = ", ".join(sorted(TOOL_ROUTES))
         raise ValueError(f"unknown activation tool '{tool}'. Allowed tools: {allowed}")

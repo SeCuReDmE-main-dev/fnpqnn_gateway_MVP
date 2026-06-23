@@ -8,15 +8,18 @@ import unittest
 
 from fnpqnn_gateway_mvp.cli import main
 from fnpqnn_gateway_mvp.activation import activate, activation_plan, route_for_tool
+from fnpqnn_gateway_mvp.bootstrap import bootstrap, build_bootstrap_plan, load_bootstrap_state
 from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
 from fnpqnn_gateway_mvp.cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
+from fnpqnn_gateway_mvp.model_provider import build_model_provider_switch, model_provider_switch
 from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
 from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
+from fnpqnn_gateway_mvp.web_auth_login import auth_login, list_auth_login_systems
 
 
 class GatewayCliTests(unittest.TestCase):
@@ -133,6 +136,79 @@ class GatewayCliTests(unittest.TestCase):
             agents = Path(payload["paths"]["agents"]).read_text(encoding="utf-8")
             self.assertIn("Native Takeover", agents)
 
+    def test_bootstrap_natural_writes_activation_and_bootstrap_state(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = bootstrap("natural", "fp-natural", workspace=tmp, accept_fingerprint=True)
+            self.assertTrue(payload["success"])
+            self.assertEqual(payload["runtime_hook"], "simulator")
+            self.assertTrue(Path(payload["paths"]["activation"]).exists())
+            self.assertTrue(Path(payload["paths"]["bootstrap"]).exists())
+            state = load_bootstrap_state(tmp)
+            self.assertEqual(state["profile"]["name"], "natural")
+            self.assertEqual(state["runtime_hook"], "simulator")
+
+    def test_bootstrap_profiles_resolve_expected_runtime_hooks(self) -> None:
+        expected = {
+            "codex": "codex",
+            "antigravity": "antigravity",
+            "ollama-cloud": "ollama-cloud",
+            "openclaw": "openclaw",
+        }
+        for profile, hook in expected.items():
+            with self.subTest(profile=profile):
+                payload = build_bootstrap_plan(profile, f"fp-{profile}", accept_fingerprint=True)
+                self.assertTrue(payload["success"])
+                self.assertEqual(payload["runtime_hook"], hook)
+                self.assertIn("fnp-qnn", payload["command"])
+
+    def test_bootstrap_vscode_keeps_copilot_support_and_codeproject_tunnel(self) -> None:
+        payload = build_bootstrap_plan(
+            "vscode",
+            "fp-vscode",
+            accept_fingerprint=True,
+            codeproject_url="localhost:32168",
+        )
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["activation"]["route"]["tool"], "github-copilot")
+        self.assertTrue(payload["activation"]["route"]["support_only"])
+        self.assertEqual(payload["runtime_hook"], "simulator")
+        self.assertEqual(payload["support_checks"]["codeproject_tunnel"]["url"], "http://localhost:32168")
+
+    def test_bootstrap_docker_kit_dry_run_command(self) -> None:
+        payload = build_bootstrap_plan("docker-kit", "fp-docker", accept_fingerprint=True)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["profile"]["name"], "docker-kit")
+        self.assertEqual(payload["command"], ["docker", "compose", "up", "--build", "simulator-api", "simulator-panel"])
+
+    def test_gateway_start_dry_run_uses_last_bootstrap_state(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bootstrap("natural", "fp-natural", workspace=tmp, accept_fingerprint=True)
+            code, output = self.capture(["--json", "gateway", "start", "--workspace", tmp, "--dry-run"])
+            self.assertEqual(code, 0)
+            payload = json.loads(output)
+            self.assertEqual(payload["profile"]["name"], "natural")
+            self.assertEqual(payload["runtime_hook"], "simulator")
+            self.assertIn("fnp-qnn", payload["command"])
+
+    def test_gateway_run_profile_natural_dry_run(self) -> None:
+        code, output = self.capture(["--json", "gateway", "run", "--profile", "natural", "--dry-run"])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["profile"]["name"], "natural")
+        self.assertEqual(payload["runtime_hook"], "simulator")
+        self.assertIn("fnp-qnn", payload["command"])
+
+    def test_gateway_bootstrap_profiles_cli(self) -> None:
+        code, output = self.capture(["--json", "gateway", "bootstrap-profiles"])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        names = {profile["name"] for profile in payload["profiles"]}
+        self.assertTrue({"natural", "vscode", "ollama-cloud", "openclaw", "cloud-kit", "docker-kit"}.issubset(names))
+
     def test_gateway_activate_cli_dry_run(self) -> None:
         code, output = self.capture([
             "--json",
@@ -167,6 +243,183 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(payload["gates"]["runtime_gate"]["hook"], "codeproject-ai")
         self.assertEqual(payload["codeproject_url"], "http://localhost:32168")
+
+    def test_model_provider_switch_is_web_auth_first_and_secret_safe(self) -> None:
+        payload = build_model_provider_switch(tool="codex", fingerprint="fp-codex", workspace=".")
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["provider"]["provider"], "openai")
+        self.assertEqual(payload["selected_auth_source"], "web-auth")
+        self.assertFalse(payload["managed_env_policy"]["user_must_edit_env"])
+        self.assertFalse(payload["managed_env_policy"]["user_must_paste_token"])
+        self.assertFalse(payload["managed_env_policy"]["dotenv_read_for_switch"])
+        self.assertFalse(payload["auth_signals"]["secret_values_included"])
+        provider_text = " ".join(payload["provider"]["instructions"]).lower()
+        auth_text = " ".join(payload["auth_status"]["instructions"]).lower()
+        self.assertNotIn("set ", provider_text)
+        self.assertNotIn("paste", provider_text)
+        self.assertNotIn("edit", provider_text)
+        self.assertNotIn("api_key", auth_text)
+        self.assertNotIn("paste", auth_text)
+
+    def test_model_provider_switch_can_use_last_bootstrap(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bootstrap("antigravity", "fp-google", workspace=tmp, accept_fingerprint=True)
+            payload = model_provider_switch(workspace=tmp, last=True)
+            self.assertTrue(payload["success"])
+            self.assertEqual(payload["fingerprint"], "fp-google")
+            self.assertEqual(payload["provider"]["provider"], "google")
+            self.assertEqual(payload["selected_auth_source"], "web-auth")
+
+    def test_auth_model_switch_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "auth",
+            "model-switch",
+            "--tool",
+            "ollama-cloud",
+            "--fingerprint",
+            "fp-ollama",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["provider"]["provider"], "ollama")
+        self.assertEqual(payload["selected_auth_source"], "web-auth")
+
+    def test_function_provider_switch_alias_cli(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "function",
+            "provider-switch",
+            "--tool",
+            "github-copilot",
+            "--fingerprint",
+            "fp-copilot",
+            "--source",
+            "petit-yolo-instructions",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["selected_auth_source"], "petit-yolo-instructions")
+        self.assertEqual(payload["fallback"]["name"], "petit-yolo-instructions")
+
+    def test_model_provider_switch_write_creates_gateway_state_only(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = model_provider_switch(tool="codex", fingerprint="fp-codex", workspace=tmp, write=True)
+            self.assertTrue(payload["success"])
+            path = Path(payload["paths"]["model_provider"])
+            self.assertTrue(path.exists())
+            self.assertFalse((Path(tmp) / ".env").exists())
+
+    def test_auth_login_systems_cover_chosen_bootstrap_systems(self) -> None:
+        systems = {item["system"] for item in list_auth_login_systems()}
+        expected = {
+            "natural",
+            "codex",
+            "antigravity",
+            "vscode",
+            "ollama-cloud",
+            "openclaw",
+            "cloud-kit",
+            "docker-kit",
+            "codeproject-ai",
+            "e2b",
+            "datadog",
+            "google",
+            "github",
+            "docker",
+        }
+        self.assertTrue(expected.issubset(systems))
+
+    def test_auth_login_is_web_auth_first_and_secret_safe(self) -> None:
+        payload = auth_login("codex", fingerprint="fp-codex", accept_fingerprint=True)
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["status"], "fingerprint-accepted")
+        self.assertEqual(payload["auth_flow"]["primary"], "web-auth")
+        self.assertFalse(payload["policy"]["user_must_paste_secret"])
+        self.assertFalse(payload["policy"]["user_must_edit_env"])
+        self.assertFalse(payload["policy"]["dotenv_read"])
+        self.assertFalse(payload["policy"]["dotenv_write"])
+        self.assertEqual(payload["provider_switch"]["selected_auth_source"], "web-auth")
+        self.assertTrue(payload["validation"]["success"])
+
+    def test_auth_login_all_returns_each_system(self) -> None:
+        payload = auth_login("all")
+        self.assertTrue(payload["success"])
+        systems = {item["system"]["system"] for item in payload["systems"]}
+        self.assertIn("cloud-kit", systems)
+        self.assertIn("docker-kit", systems)
+        self.assertIn("datadog", systems)
+
+    def test_auth_login_write_creates_only_gateway_login_state(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = auth_login("codex", workspace=tmp, fingerprint="fp-codex", accept_fingerprint=True, write=True)
+            self.assertTrue(payload["success"])
+            self.assertTrue(Path(payload["paths"]["auth_login"]).exists())
+            self.assertFalse((Path(tmp) / ".env").exists())
+
+    def test_auth_login_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "auth",
+            "login",
+            "--system",
+            "cloud-kit",
+            "--fingerprint",
+            "fp-cloud",
+            "--accept-fingerprint",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["system"]["provider"], "e2b")
+        self.assertEqual(payload["auth_flow"]["primary"], "web-auth")
+        self.assertTrue(payload["validation"]["success"])
+
+    def test_function_auth_login_alias_cli(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "function",
+            "auth-login",
+            "--system",
+            "vscode",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["system"]["provider"], "github-copilot")
+        self.assertTrue(payload["system"]["support_only"])
+
+    def test_explicit_web_auth_accounts_have_https_hooks(self) -> None:
+        expected = {
+            "e2b": "https://e2b.dev/dashboard",
+            "datadog": "https://app.datadoghq.com/account/login",
+            "google": "https://accounts.google.com/",
+            "github": "https://github.com/login",
+            "docker": "https://app.docker.com/sign-in",
+        }
+        for system, url in expected.items():
+            with self.subTest(system=system):
+                payload = auth_login(system)
+                self.assertTrue(payload["success"])
+                self.assertEqual(payload["web_auth_hook"]["url"], url)
+                self.assertTrue(payload["validation"]["success"])
+                self.assertFalse(payload["web_auth_hook"]["stores_secret"])
+
+    def test_auth_login_open_browser_uses_system_url(self) -> None:
+        from unittest.mock import patch
+
+        with patch("fnpqnn_gateway_mvp.web_auth_login.webbrowser.open", return_value=True) as opened:
+            payload = auth_login("datadog", open_browser=True)
+        self.assertTrue(payload["auth_flow"]["browser_opened"])
+        opened.assert_called_once_with("https://app.datadoghq.com/account/login")
 
     def test_capability_map_keeps_codex_and_simulator_separate(self) -> None:
         payload = capability_map("codex", workspace=".")
