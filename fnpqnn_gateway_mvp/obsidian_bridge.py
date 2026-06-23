@@ -15,6 +15,7 @@ import re
 from typing import Any
 
 from .activation import route_for_tool
+from .neutrosophic_gate import p114_consensus, p114_items_from_note
 
 
 DEFAULT_VAULT_DIR = ".fnpqnn_gateway/obsidian_vault"
@@ -59,6 +60,12 @@ def obsidian_plan(tool: str, workspace: str | Path = ".", vault: str | Path | No
             "fnpqnn_tool": route.tool,
             "runtime_hook": route.runtime_hook,
             "source": "native-tool-export|gateway-note|simulator-event",
+            "fnpqnn_t": "p114 truth score",
+            "fnpqnn_i": "p114 indeterminacy score",
+            "fnpqnn_f": "p114 falsity score",
+            "fnpqnn_df": "local differentiated uncertainty/admission load",
+            "fnpqnn_gate": "p114_ffed_neutrosophic_consensus|none",
+            "fnpqnn_action": "p114 transport action",
             "tags": ["fnpqnn", route.tool, "gateway-rag"],
             "created_at": "ISO-8601",
         },
@@ -130,6 +137,7 @@ def record_note(
     vault: str | Path | None = None,
     tags: list[str] | None = None,
     source: str = "gateway-note",
+    neutrosophic_gate: str = "p114",
     write: bool = False,
     force: bool = False,
 ) -> dict[str, Any]:
@@ -140,16 +148,37 @@ def record_note(
     note_path = note_dir / f"{_slug(title)}.md"
     note_tags = ["fnpqnn", route.tool, "gateway-rag", *(tags or [])]
     created = _now()
+    gate_payload = None
+    if neutrosophic_gate == "p114":
+        gate_payload = p114_consensus(p114_items_from_note(title, content, note_tags, source))
+    consensus = dict((gate_payload or {}).get("consensus") or {})
+    gate_status = dict((gate_payload or {}).get("cli_gate") or {})
+    truth = float(consensus.get("truth", 0.0))
+    indeterminacy = float(consensus.get("indeterminacy", 0.0))
+    falsity = float(consensus.get("falsity", 0.0))
+    delta_falsity = round(min(1.0, max(0.0, 0.5 * indeterminacy + 0.5 * falsity)), 4)
     note = (
         "---\n"
         f"fnpqnn_tool: {route.tool}\n"
         f"runtime_hook: {route.runtime_hook}\n"
         f"source: {source}\n"
         f"created_at: {created}\n"
+        f"fnpqnn_t: {truth:.4f}\n"
+        f"fnpqnn_i: {indeterminacy:.4f}\n"
+        f"fnpqnn_f: {falsity:.4f}\n"
+        f"fnpqnn_df: {delta_falsity:.4f}\n"
+        f"fnpqnn_gate: {neutrosophic_gate}\n"
+        f"fnpqnn_action: {(gate_payload or {}).get('action', 'none')}\n"
         "tags:\n"
         + "".join(f"  - {tag}\n" for tag in note_tags)
         + "---\n\n"
         f"# {title}\n\n"
+        "## Neutrosophic Admission\n\n"
+        f"- gate: `{neutrosophic_gate}`\n"
+        f"- action: `{(gate_payload or {}).get('action', 'none')}`\n"
+        f"- status: `{gate_status.get('status', 'not_scored')}`\n"
+        f"- T/I/F/dF: `{truth:.4f}` / `{indeterminacy:.4f}` / `{falsity:.4f}` / `{delta_falsity:.4f}`\n\n"
+        "## Content\n\n"
         f"{content.strip()}\n"
     )
     payload: dict[str, Any] = {
@@ -162,6 +191,15 @@ def record_note(
         "tags": note_tags,
         "source": source,
         "created_at": created,
+        "neutrosophic_gate": gate_payload,
+        "neutrosophic_frontmatter": {
+            "fnpqnn_t": truth,
+            "fnpqnn_i": indeterminacy,
+            "fnpqnn_f": falsity,
+            "fnpqnn_df": delta_falsity,
+            "fnpqnn_gate": neutrosophic_gate,
+            "fnpqnn_action": (gate_payload or {}).get("action", "none"),
+        },
         "lvfm_stream": {
             "enabled": True,
             "stream": "obsidian-admission-creek",
@@ -181,7 +219,26 @@ def record_note(
     index_path = Path(paths["index"])
     index_path.parent.mkdir(parents=True, exist_ok=True)
     with index_path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps({key: payload[key] for key in ("tool", "title", "path", "tags", "source", "created_at", "lvfm_stream")}, sort_keys=True) + "\n")
+        handle.write(
+            json.dumps(
+                {
+                    key: payload[key]
+                    for key in (
+                        "tool",
+                        "title",
+                        "path",
+                        "tags",
+                        "source",
+                        "created_at",
+                        "neutrosophic_gate",
+                        "neutrosophic_frontmatter",
+                        "lvfm_stream",
+                    )
+                },
+                sort_keys=True,
+            )
+            + "\n"
+        )
     return payload
 
 
@@ -226,6 +283,8 @@ def lvfm_stream(query: str, workspace: str | Path = ".", vault: str | Path | Non
                     "admission_source": item.get("source"),
                     "target_layer": "LVFMRuntimeGraph",
                     "bridge": "obsidian-creek-to-lvfm-river",
+                    "neutrosophic_gate": item.get("neutrosophic_gate"),
+                    "neutrosophic_frontmatter": item.get("neutrosophic_frontmatter"),
                 },
                 "lvfm_hint": {
                     "T": "preserve confirmed/admitted content",

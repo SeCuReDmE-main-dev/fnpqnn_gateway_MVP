@@ -13,6 +13,7 @@ from fnpqnn_gateway_mvp.cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
+from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
 from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
@@ -254,9 +255,36 @@ class GatewayCliTests(unittest.TestCase):
                 write=True,
             )
             self.assertTrue(record_payload["success"])
+            self.assertIn("fnpqnn_t", record_payload["neutrosophic_frontmatter"])
+            self.assertEqual(record_payload["neutrosophic_frontmatter"]["fnpqnn_gate"], "p114")
             query_payload = query_notes("yolo cerebrum", workspace=tmp)
             self.assertEqual(len(query_payload["results"]), 1)
             self.assertIn("YOLO Cerebrum Gate", query_payload["results"][0]["title"])
+
+    def test_p114_consensus_cli_gate(self) -> None:
+        payload = p114_consensus(["verified evidence passed", "partial risk pending"])
+        if payload["status"] == "disabled":
+            self.skipTest(payload["metadata"].get("message", "p114 pluginpack disabled"))
+        self.assertTrue(payload["success"], payload)
+        self.assertEqual(payload["plugin_id"], "p114_ffed_neutrosophic_consensus")
+        self.assertIn("consensus", payload)
+        self.assertFalse(payload["raw_token_stored"])
+
+    def test_p114_consensus_cli(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "memory",
+            "p114-consensus",
+            "--item",
+            "verified evidence passed",
+            "--item",
+            "partial risk pending",
+        ])
+        payload = json.loads(output)
+        if payload["status"] == "disabled":
+            self.skipTest(payload["metadata"].get("message", "p114 pluginpack disabled"))
+        self.assertEqual(code, 0)
+        self.assertEqual(payload["plugin_id"], "p114_ffed_neutrosophic_consensus")
 
     def test_obsidian_cli_dry_run(self) -> None:
         code, output = self.capture(["--json", "memory", "obsidian-init", "--tool", "openclaw", "--dry-run"])
@@ -284,6 +312,8 @@ class GatewayCliTests(unittest.TestCase):
             self.assertEqual(payload["cerebrum_ingest_endpoint"], "POST /cerebrum/runtime/ingest")
             self.assertEqual(len(payload["cerebrum_payload"]["memories"]), 1)
             self.assertEqual(payload["events"][0]["metadata"]["bridge"], "obsidian-creek-to-lvfm-river")
+            self.assertIn("neutrosophic_gate", payload["events"][0]["metadata"])
+            self.assertIn("neutrosophic_frontmatter", payload["events"][0]["metadata"])
 
     def test_obsidian_lvfm_stream_cli(self) -> None:
         import tempfile

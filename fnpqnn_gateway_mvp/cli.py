@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +17,7 @@ from .codeproject_client import status as codeproject_status, yolo_probe, yolo_t
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
 from .natural_auth import copilot_status, provider_status
+from .neutrosophic_gate import p114_consensus
 from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
 from .runner import run_hook
 from .support import support_all, support_provider
@@ -32,7 +35,8 @@ def _print(payload: dict[str, Any], as_json: bool) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="fnpqnn", description="Gateway CLI for FNP-QNN and CodeProject.AI backends.")
     parser.add_argument("--json", action="store_true", help="Emit JSON output for structured commands.")
-    sub = parser.add_subparsers(dest="section", required=True)
+    parser.add_argument("--tui", action="store_true", help="Launch the branded FNP-QNN simulator TUI when available.")
+    sub = parser.add_subparsers(dest="section")
 
     gateway = sub.add_parser("gateway", help="Run or inspect runtime gateway hooks.")
     gateway_sub = gateway.add_subparsers(dest="gateway_command", required=True)
@@ -141,6 +145,7 @@ def build_parser() -> argparse.ArgumentParser:
     obsidian_record.add_argument("--vault")
     obsidian_record.add_argument("--tag", action="append", default=[])
     obsidian_record.add_argument("--source", default="gateway-note")
+    obsidian_record.add_argument("--neutrosophic-gate", choices=["p114", "none"], default="p114")
     obsidian_record.add_argument("--dry-run", action="store_true")
     obsidian_record.add_argument("--write", action="store_true")
     obsidian_record.add_argument("--force", action="store_true")
@@ -154,6 +159,9 @@ def build_parser() -> argparse.ArgumentParser:
     obsidian_lvfm.add_argument("--workspace", default=".")
     obsidian_lvfm.add_argument("--vault")
     obsidian_lvfm.add_argument("--limit", type=int, default=5)
+    p114 = memory_sub.add_parser("p114-consensus", help="Run p114 neutrosophic consensus for gateway admission items.")
+    p114.add_argument("--item", action="append", default=[])
+    p114.add_argument("--mode", choices=["consensus", "decision", "score_evidence", "case_study_audit"], default="score_evidence")
 
     cloud = sub.add_parser("cloud", help="Optional cloud kit bridges for external data ingestion.")
     cloud_sub = cloud.add_subparsers(dest="cloud_command", required=True)
@@ -174,6 +182,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 def run_args(args: argparse.Namespace) -> int:
     as_json = bool(args.json)
+    if getattr(args, "tui", False):
+        return subprocess.run([sys.executable, "-m", "fnp_qnn_cli.tui"], check=False).returncode
+    if not args.section:
+        raise ValueError("a command is required unless --tui is used")
     if args.section == "gateway":
         if args.gateway_command == "hooks":
             return _print({"success": True, "hooks": list_hooks()}, as_json)
@@ -284,6 +296,7 @@ def run_args(args: argparse.Namespace) -> int:
                     vault=args.vault,
                     tags=args.tag,
                     source=args.source,
+                    neutrosophic_gate=args.neutrosophic_gate,
                     write=args.write and not args.dry_run,
                     force=args.force,
                 ),
@@ -293,6 +306,8 @@ def run_args(args: argparse.Namespace) -> int:
             return _print(query_notes(args.query, args.workspace, args.vault, args.limit), as_json)
         if args.memory_command == "obsidian-lvfm-stream":
             return _print(lvfm_stream(args.query, args.workspace, args.vault, args.limit), as_json)
+        if args.memory_command == "p114-consensus":
+            return _print(p114_consensus(args.item, mode=args.mode), as_json)
     if args.section == "cloud":
         if args.cloud_command == "e2b-status":
             return _print(e2b_status(), as_json)
