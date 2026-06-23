@@ -137,3 +137,21 @@ paths and validation results.
 route. It supports `--last` or explicit `--profile`. It never stores secrets
 and never installs provider-specific assets unless `--write --create-files` is
 used intentionally.
+
+## Native Deepsearch Skill
+
+For simulator research validation, create a provider-routed web-search
+contract from an authlog:
+
+```powershell
+fnpqnn gateway deepsearch-skill --query "validate this research" --system ollama-cloud --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --last-auth --write
+fnpqnn function deepsearch --query "validate this research" --system docker --dry-run
+```
+
+The contract routes Ollama Cloud and Google/Antigravity to their native
+web-search surface. If the accepted authlog belongs to a system without a
+declared native search route, the gateway falls back to
+`antigravity-gemini-google-search`. Written contracts live under
+`.fnpqnn_gateway/deepsearch`; raw provider secrets, cookies, API keys, and
+dotenv material are never written.

@@ -57,6 +57,8 @@ fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "
 fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn function skill-creator --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --system ollama-cloud --dry-run
+fnpqnn function deepsearch --query "validate this research" --last-auth --write
 fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
 fnpqnn memory obsidian-init --tool codex --write
@@ -109,6 +111,14 @@ writes entry and exit contracts under `.fnpqnn_gateway/skill_entries` and
 required frontmatter, validation commands, optional resource folders, and the
 same no-secret/no-provider-absorption boundary. The function-style alias is
 `fnpqnn function skill-creator`.
+
+`fnpqnn gateway deepsearch-skill` creates the simulator native web-search
+contract from the selected authlog session. Ollama Cloud and
+Google/Antigravity routes use their provider-native web-search surface; systems
+without a declared native search route fall back to
+`antigravity-gemini-google-search`. The alias is `fnpqnn function deepsearch`.
+The contract is written under `.fnpqnn_gateway/deepsearch` only when `--write`
+is used, and it never stores tokens, cookies, API keys, or `.env` material.
 
 ## Capability bridge
 

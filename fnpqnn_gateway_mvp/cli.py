@@ -17,6 +17,7 @@ from .capability_bridge import capability_map, skill_request
 from .cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from .codeproject_client import status as codeproject_status, yolo_probe, yolo_training_probe
 from .codeproject_mesh import mesh_status
+from .deepsearch_skill import build_deepsearch_skill, write_deepsearch_skill
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
 from .model_provider import list_model_provider_routes, model_provider_switch
 from .natural_auth import copilot_status, provider_status
@@ -129,6 +130,16 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_skill_create.add_argument("--dry-run", action="store_true")
     gateway_skill_create.add_argument("--write", action="store_true")
     gateway_skill_create.add_argument("--force", action="store_true")
+    gateway_deepsearch = gateway_sub.add_parser("deepsearch-skill", help="Create a provider-native simulator web-search/deepsearch contract.")
+    gateway_deepsearch.add_argument("--query", required=True)
+    gateway_deepsearch.add_argument("--research-goal")
+    gateway_deepsearch.add_argument("--workspace", default=".")
+    gateway_deepsearch.add_argument("--system")
+    gateway_deepsearch.add_argument("--last-auth", action="store_true")
+    gateway_deepsearch.add_argument("--fingerprint")
+    gateway_deepsearch.add_argument("--dry-run", action="store_true")
+    gateway_deepsearch.add_argument("--write", action="store_true")
+    gateway_deepsearch.add_argument("--force", action="store_true")
     gateway_activate = gateway_sub.add_parser("activate", help="Accept a fingerprint and activate the matching gateway route.")
     gateway_activate.add_argument("--tool", required=True)
     gateway_activate.add_argument("--fingerprint", required=True)
@@ -255,6 +266,16 @@ def build_parser() -> argparse.ArgumentParser:
     function_skill_creator.add_argument("--dry-run", action="store_true")
     function_skill_creator.add_argument("--write", action="store_true")
     function_skill_creator.add_argument("--force", action="store_true")
+    function_deepsearch = function_sub.add_parser("deepsearch", help="Alias for gateway deepsearch-skill.")
+    function_deepsearch.add_argument("--query", required=True)
+    function_deepsearch.add_argument("--research-goal")
+    function_deepsearch.add_argument("--workspace", default=".")
+    function_deepsearch.add_argument("--system")
+    function_deepsearch.add_argument("--last-auth", action="store_true")
+    function_deepsearch.add_argument("--fingerprint")
+    function_deepsearch.add_argument("--dry-run", action="store_true")
+    function_deepsearch.add_argument("--write", action="store_true")
+    function_deepsearch.add_argument("--force", action="store_true")
 
     support = sub.add_parser("support", help="LLM-safe support diagnostics.")
     support_sub = support.add_subparsers(dest="support_command", required=True)
@@ -397,6 +418,18 @@ def run_args(args: argparse.Namespace) -> int:
             )
             if args.write and not args.dry_run:
                 payload = write_skill_creator_plan(payload, force=args.force, create_skill_files=args.create_files)
+            return _print(payload, as_json)
+        if args.gateway_command == "deepsearch-skill":
+            payload = build_deepsearch_skill(
+                query=args.query,
+                research_goal=args.research_goal,
+                workspace=args.workspace,
+                system=args.system,
+                last_auth=args.last_auth,
+                fingerprint=args.fingerprint,
+            )
+            if args.write and not args.dry_run:
+                payload = write_deepsearch_skill(payload, force=args.force)
             return _print(payload, as_json)
         if args.gateway_command == "activate":
             payload = activate(
@@ -566,6 +599,18 @@ def run_args(args: argparse.Namespace) -> int:
             )
             if args.write and not args.dry_run:
                 payload = write_skill_creator_plan(payload, force=args.force, create_skill_files=args.create_files)
+            return _print(payload, as_json)
+        if args.function_command == "deepsearch":
+            payload = build_deepsearch_skill(
+                query=args.query,
+                research_goal=args.research_goal,
+                workspace=args.workspace,
+                system=args.system,
+                last_auth=args.last_auth,
+                fingerprint=args.fingerprint,
+            )
+            if args.write and not args.dry_run:
+                payload = write_deepsearch_skill(payload, force=args.force)
             return _print(payload, as_json)
     if args.section == "support":
         if args.support_command == "provider":

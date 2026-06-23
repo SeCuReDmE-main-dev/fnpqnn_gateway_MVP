@@ -27,6 +27,9 @@ fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contrac
 fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --last --output-path .\skills --write
 fnpqnn function skill-creator --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --system ollama-cloud --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --last-auth --write
+fnpqnn function deepsearch --query "validate this research" --system docker --dry-run
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --dry-run
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --write
 fnpqnn gateway doctor --hook simulator
@@ -71,6 +74,15 @@ companion reports `created`, `planned`, or `blocked` status.
 It supports `--profile <profile>` or `--last`, optional `--output-path`, and
 optional `--resources scripts,references,assets`. It never installs
 provider-specific assets unless `--write --create-files` is explicitly used.
+
+`gateway deepsearch-skill` creates a native web-search/deepsearch contract for
+the simulator from `--system <auth-system>` or the latest accepted authlog via
+`--last-auth`. Ollama Cloud and Google/Antigravity use provider-native web
+search. Systems without a declared native search route fall back to
+`antigravity-gemini-google-search`. The function alias is
+`fnpqnn function deepsearch`. `--write` creates
+`.fnpqnn_gateway/deepsearch/<query>.json` and `.md`; no `.env`, token, cookie,
+or API key material is read or written.
 
 ## CodeProject.AI
 

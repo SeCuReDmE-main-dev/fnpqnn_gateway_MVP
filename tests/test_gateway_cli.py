@@ -13,6 +13,7 @@ from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
 from fnpqnn_gateway_mvp.cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
+from fnpqnn_gateway_mvp.deepsearch_skill import build_deepsearch_skill, write_deepsearch_skill
 from fnpqnn_gateway_mvp.hooks import HOOKS
 from fnpqnn_gateway_mvp.model_provider import build_model_provider_switch, model_provider_switch
 from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
@@ -582,6 +583,82 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(payload["bootstrap_route"]["tool"], "codex")
         self.assertIn("exit_contract", payload)
+
+    def test_deepsearch_ollama_cloud_uses_native_route(self) -> None:
+        payload = build_deepsearch_skill(query="validate simulator research", system="ollama-cloud")
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["search_route"]["route"], "ollama-cloud-web-search")
+        self.assertFalse(payload["search_route"]["fallback_used"])
+        self.assertTrue(payload["policy"]["no_generic_scraper_first"])
+        self.assertFalse(payload["raw_secret_stored"])
+
+    def test_deepsearch_non_search_provider_falls_back_to_antigravity(self) -> None:
+        payload = build_deepsearch_skill(query="datadog account research", system="datadog")
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["search_route"]["route"], "antigravity-gemini-google-search")
+        self.assertTrue(payload["search_route"]["fallback_used"])
+        self.assertEqual(payload["search_route"]["provider"], "google")
+
+    def test_deepsearch_last_auth_uses_latest_written_authlog(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            auth_login("docker", workspace=tmp, fingerprint="fp-docker", accept_fingerprint=True, write=True)
+            auth_login("google", workspace=tmp, fingerprint="fp-google", accept_fingerprint=True, write=True)
+            payload = build_deepsearch_skill(query="latest authenticated search", workspace=tmp, last_auth=True)
+            self.assertTrue(payload["success"])
+            self.assertEqual(payload["authlog_source"], "last-auth")
+            self.assertEqual(payload["search_route"]["selected_provider"], "google")
+            self.assertFalse(payload["search_route"]["fallback_used"])
+            self.assertEqual(payload["fingerprint_ref"], "fp-google")
+
+    def test_deepsearch_write_creates_only_gateway_contract(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            payload = build_deepsearch_skill(query="Create a cited report", workspace=tmp, system="antigravity")
+            result = write_deepsearch_skill(payload)
+            self.assertFalse(result["dry_run"])
+            self.assertTrue(Path(payload["paths"]["contract_json"]).exists())
+            self.assertTrue(Path(payload["paths"]["contract_markdown"]).exists())
+            self.assertFalse((Path(tmp) / ".env").exists())
+            content = Path(payload["paths"]["contract_json"]).read_text(encoding="utf-8")
+            self.assertNotIn("api_key", content.lower())
+            saved = json.loads(content)
+            self.assertFalse(saved["raw_secret_stored"])
+            self.assertFalse(saved["policy"]["raw_secret_stored"])
+
+    def test_gateway_deepsearch_skill_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "gateway",
+            "deepsearch-skill",
+            "--query",
+            "research validation",
+            "--system",
+            "ollama-cloud",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["search_route"]["route"], "ollama-cloud-web-search")
+        self.assertIn("simulator_skill", payload)
+
+    def test_function_deepsearch_alias_cli(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "function",
+            "deepsearch",
+            "--query",
+            "research validation",
+            "--system",
+            "docker",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertTrue(payload["search_route"]["fallback_used"])
+        self.assertEqual(payload["search_route"]["route"], "antigravity-gemini-google-search")
 
     def test_capability_map_cli(self) -> None:
         code, output = self.capture(["--json", "gateway", "capability-map", "--tool", "github-copilot"])
