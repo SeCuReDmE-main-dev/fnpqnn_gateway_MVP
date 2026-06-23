@@ -9,7 +9,7 @@ from typing import Any
 from . import __version__
 from .activation import activate, list_activation_routes
 from .capability_bridge import capability_map, skill_request
-from .cloud_kit import e2b_ingest_plan, e2b_status
+from .cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from .codeproject_client import status as codeproject_status, yolo_probe, yolo_training_probe
 from .codeproject_mesh import mesh_status
 from .hooks import DEFAULT_CODEPROJECT_URL, get_hook, list_hooks
@@ -157,6 +157,8 @@ def build_parser() -> argparse.ArgumentParser:
     cloud = sub.add_parser("cloud", help="Optional cloud kit bridges for external data ingestion.")
     cloud_sub = cloud.add_subparsers(dest="cloud_command", required=True)
     cloud_sub.add_parser("e2b-status", help="Inspect E2B cloud kit readiness without printing secrets.")
+    e2b_smoke_parser = cloud_sub.add_parser("e2b-smoke", help="Run a real minimal E2B sandbox smoke test.")
+    e2b_smoke_parser.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
     e2b_plan = cloud_sub.add_parser("e2b-ingest-plan", help="Plan external data ingestion through E2B into Obsidian and LVFM.")
     e2b_plan.add_argument("--tool", required=True)
     e2b_plan.add_argument("--source", required=True)
@@ -293,6 +295,8 @@ def run_args(args: argparse.Namespace) -> int:
     if args.section == "cloud":
         if args.cloud_command == "e2b-status":
             return _print(e2b_status(), as_json)
+        if args.cloud_command == "e2b-smoke":
+            return _print(e2b_smoke(args.env_file), as_json)
         if args.cloud_command == "e2b-ingest-plan":
             return _print(
                 e2b_ingest_plan(

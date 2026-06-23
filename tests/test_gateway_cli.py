@@ -9,6 +9,7 @@ import unittest
 from fnpqnn_gateway_mvp.cli import main
 from fnpqnn_gateway_mvp.activation import activate, activation_plan, route_for_tool
 from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
+from fnpqnn_gateway_mvp.cloud_kit import e2b_ingest_plan, e2b_status
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
@@ -302,6 +303,42 @@ class GatewayCliTests(unittest.TestCase):
             self.assertEqual(code, 0)
             payload = json.loads(output)
             self.assertEqual(payload["stream"], "obsidian-admission-creek")
+
+    def test_e2b_status_is_secret_safe(self) -> None:
+        payload = e2b_status()
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["provider"], "e2b")
+        self.assertIn("e2b_code_interpreter", payload["packages"])
+        self.assertFalse(payload["raw_token_stored"])
+
+    def test_e2b_ingest_plan_links_cloud_to_obsidian_and_lvfm(self) -> None:
+        payload = e2b_ingest_plan("codex", "https://example.com/data.csv", "External Data")
+        self.assertTrue(payload["success"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["tool"], "codex")
+        self.assertIn("Obsidian creek feeds LVFM stream", payload["pipeline"])
+        self.assertTrue(payload["boundaries"]["no_raw_tokens"])
+        self.assertIn("obsidian-record", payload["commands"]["admit_to_obsidian"])
+        self.assertIn("obsidian-lvfm-stream", payload["commands"]["feed_lvfm"])
+
+    def test_e2b_ingest_plan_cli(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "cloud",
+            "e2b-ingest-plan",
+            "--tool",
+            "openclaw",
+            "--source",
+            "https://example.com/data.csv",
+            "--title",
+            "External Data",
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["tool"], "openclaw")
+        self.assertEqual(payload["runtime_hook"], "openclaw")
+        self.assertTrue(payload["boundaries"]["sandbox_required_for_untrusted_code"])
 
 
 if __name__ == "__main__":

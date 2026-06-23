@@ -18,6 +18,9 @@ from typing import Any
 from .activation import route_for_tool
 
 
+DEFAULT_OPENCLAW_ENV = Path.home() / ".openclaw" / "workspace" / ".env"
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
@@ -47,6 +50,75 @@ def e2b_status() -> dict[str, Any]:
             "stream admitted note into LVFM",
         ],
     }
+
+
+def load_env_file(path: str | Path | None = None, keys: tuple[str, ...] = ("E2B_API_KEY",)) -> dict[str, Any]:
+    env_path = Path(path).expanduser() if path else DEFAULT_OPENCLAW_ENV
+    loaded: list[str] = []
+    if not env_path.exists():
+        return {"success": False, "path": str(env_path), "loaded": loaded, "error": "env file not found"}
+    selected = set(keys)
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key not in selected:
+            continue
+        value = value.strip().strip('"').strip("'")
+        if value:
+            os.environ[key] = value
+            loaded.append(key)
+    return {
+        "success": True,
+        "path": str(env_path),
+        "loaded": sorted(set(loaded)),
+        "presence": {key: bool(os.environ.get(key)) for key in selected},
+        "raw_values_printed": False,
+    }
+
+
+def e2b_smoke(env_file: str | Path | None = None) -> dict[str, Any]:
+    env_load = load_env_file(env_file)
+    if not os.environ.get("E2B_API_KEY"):
+        return {
+            "success": False,
+            "provider": "e2b",
+            "env_load": env_load,
+            "error": "E2B_API_KEY is missing or empty",
+            "raw_token_stored": False,
+        }
+    try:
+        from e2b import Sandbox
+    except Exception as exc:
+        return {
+            "success": False,
+            "provider": "e2b",
+            "env_load": env_load,
+            "error": f"e2b package unavailable: {type(exc).__name__}: {exc}",
+            "raw_token_stored": False,
+        }
+    try:
+        with Sandbox.create() as sandbox:
+            result = sandbox.commands.run("python - <<'PY'\nprint('fnpqnn-gateway-e2b-smoke-ok')\nPY")
+            sandbox_id = getattr(sandbox, "sandbox_id", None)
+        stdout = str(getattr(result, "stdout", ""))
+        return {
+            "success": "fnpqnn-gateway-e2b-smoke-ok" in stdout,
+            "provider": "e2b",
+            "sandbox_id": sandbox_id,
+            "stdout_contains_expected_marker": "fnpqnn-gateway-e2b-smoke-ok" in stdout,
+            "raw_token_stored": False,
+        }
+    except Exception as exc:
+        return {
+            "success": False,
+            "provider": "e2b",
+            "env_load": env_load,
+            "error": f"{type(exc).__name__}: {exc}",
+            "raw_token_stored": False,
+        }
 
 
 def e2b_ingest_plan(
