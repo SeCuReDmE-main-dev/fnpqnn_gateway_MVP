@@ -1,0 +1,24 @@
+# Hook Contract
+
+Runtime hooks are declared in `fnpqnn_gateway_mvp/hooks.py`.
+
+## Runtime Hooks
+
+- `simulator`: starts or diagnoses the base FNP-QNN simulator without AI account coupling.
+- `codex`: checks OpenAI/Codex support and emits the Codex wake prompt path before simulator launch.
+- `gemini`: checks Google/Gemini support and emits the Gemini wake prompt path before simulator launch.
+- `ollama-cloud`: checks Ollama support and emits the Ollama wake prompt path before simulator launch.
+- `agent-platform`: checks external agent platform surfaces such as OpenClaw/MCP manifests.
+- `codeproject-ai`: observes or calls one CodeProject.AI Server HTTP backend.
+- `codeproject-ai-mesh`: observes or calls a CodeProject.AI Server mesh backend and prints mesh guidance.
+
+## Non-Hooks
+
+`github-copilot` is an auth/support provider. It is not a runtime hook in v1 because Copilot is an IDE/account assistant surface, not a direct simulator backend.
+
+## Safety Rules
+
+- Commands are represented as argv lists, not shell strings.
+- Runtime commands support dry-run plans before execution.
+- Provider auth diagnostics do not store or print raw tokens.
+- CodeProject.AI mesh diagnostics do not edit `appsettings.json` in v1.

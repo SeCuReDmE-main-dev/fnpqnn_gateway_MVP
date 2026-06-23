@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fnpqnn-gateway-mvp"
+version = "0.1.0"
+description = "Standalone FNP-QNN gateway CLI with natural auth diagnostics and CodeProject.AI Server hooks."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "SeCuReDmE-main-dev" }]
+license = { text = "MIT" }
+keywords = ["fnp-qnn", "gateway", "cli", "codeproject-ai", "mcp"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.scripts]
+fnpqnn = "fnpqnn_gateway_mvp.cli:main"
+fnpqnn-gateway = "fnpqnn_gateway_mvp.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["fnpqnn_gateway_mvp*"]
