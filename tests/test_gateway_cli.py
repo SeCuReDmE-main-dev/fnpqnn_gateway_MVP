@@ -9,7 +9,7 @@ import unittest
 from fnpqnn_gateway_mvp.cli import main
 from fnpqnn_gateway_mvp.activation import activate, activation_plan, route_for_tool
 from fnpqnn_gateway_mvp.capability_bridge import capability_map, skill_request
-from fnpqnn_gateway_mvp.cloud_kit import e2b_ingest_plan, e2b_status
+from fnpqnn_gateway_mvp.cloud_kit import e2b_ingest_plan, e2b_smoke, e2b_status
 from fnpqnn_gateway_mvp.codeproject_client import DEFAULT_PROBE_ROUTES, YOLO_TRAINING_MODULE, status, yolo_probe, yolo_training_probe
 from fnpqnn_gateway_mvp.codeproject_mesh import DOCKER_TCP_MAPPING, DOCKER_UDP_MAPPING, mesh_status
 from fnpqnn_gateway_mvp.hooks import HOOKS
@@ -339,6 +339,21 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(payload["tool"], "openclaw")
         self.assertEqual(payload["runtime_hook"], "openclaw")
         self.assertTrue(payload["boundaries"]["sandbox_required_for_untrusted_code"])
+
+    def test_e2b_real_smoke_when_openclaw_key_is_available(self) -> None:
+        env_file = Path.home() / ".openclaw" / "workspace" / ".env"
+        if not env_file.exists():
+            self.skipTest("OpenClaw .env is not available")
+        has_key = any(
+            line.strip().startswith("E2B_API_KEY=") and bool(line.split("=", 1)[1].strip())
+            for line in env_file.read_text(encoding="utf-8").splitlines()
+        )
+        if not has_key:
+            self.skipTest("E2B_API_KEY is not present in OpenClaw .env")
+        payload = e2b_smoke(env_file)
+        self.assertTrue(payload["success"], payload)
+        self.assertTrue(payload["stdout_contains_expected_marker"])
+        self.assertFalse(payload["raw_token_stored"])
 
 
 if __name__ == "__main__":

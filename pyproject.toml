@@ -19,6 +19,13 @@ classifiers = [
 ]
 dependencies = []
 
+[project.optional-dependencies]
+cloud = [
+  "cryptography>=42.0.0",
+  "e2b>=1.0.0",
+  "e2b-code-interpreter>=1.0.0",
+]
+
 [project.scripts]
 fnpqnn = "fnpqnn_gateway_mvp.cli:main"
 fnpqnn-gateway = "fnpqnn_gateway_mvp.cli:main"
