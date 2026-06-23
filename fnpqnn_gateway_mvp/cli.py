@@ -24,6 +24,31 @@ from .support import support_all, support_provider
 from .tunnel import tunnel_status
 
 
+def _launch_simulator_tui() -> int:
+    candidates = [
+        [sys.executable, "-m", "fnp_qnn_cli.tui"],
+        ["fnp-qnn-tui"],
+        ["fnp-qnn", "tui"],
+    ]
+    for command in candidates:
+        try:
+            return subprocess.run(command, check=False).returncode
+        except FileNotFoundError:
+            continue
+    print(
+        json.dumps(
+            {
+                "success": False,
+                "error": "FNP-QNN simulator TUI is not installed on this Python path.",
+                "install_hint": "Install the simulator repo with pip install -e ../FNP-QNN-MVP, then run fnpqnn --tui.",
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )
+    return 1
+
+
 def _print(payload: dict[str, Any], as_json: bool) -> int:
     if as_json:
         print(json.dumps(payload, indent=2, sort_keys=True))
@@ -183,7 +208,7 @@ def build_parser() -> argparse.ArgumentParser:
 def run_args(args: argparse.Namespace) -> int:
     as_json = bool(args.json)
     if getattr(args, "tui", False):
-        return subprocess.run([sys.executable, "-m", "fnp_qnn_cli.tui"], check=False).returncode
+        return _launch_simulator_tui()
     if not args.section:
         raise ValueError("a command is required unless --tui is used")
     if args.section == "gateway":

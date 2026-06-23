@@ -77,6 +77,14 @@ class GatewayCliTests(unittest.TestCase):
         names = {hook["name"] for hook in payload["hooks"]}
         self.assertIn("codeproject-ai-mesh", names)
 
+    def test_gateway_tui_flag_has_no_required_subcommand_parse_error(self) -> None:
+        import argparse
+
+        parser = __import__("fnpqnn_gateway_mvp.cli", fromlist=["build_parser"]).build_parser()
+        args = parser.parse_args(["--tui"])
+        self.assertTrue(args.tui)
+        self.assertIsNone(args.section)
+
     def test_gateway_run_dry_run_does_not_execute(self) -> None:
         code, output = self.capture(["gateway", "run", "--hook", "simulator", "--dry-run"])
         self.assertEqual(code, 0)
