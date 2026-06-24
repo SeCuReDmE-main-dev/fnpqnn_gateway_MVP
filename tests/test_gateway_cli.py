@@ -18,11 +18,15 @@ from fnpqnn_gateway_mvp.hooks import HOOKS
 from fnpqnn_gateway_mvp.model_provider import build_model_provider_switch, model_provider_switch
 from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
 from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
+from fnpqnn_gateway_mvp.qlc_env import load_openclaw_tool_env
 from fnpqnn_gateway_mvp.qlc_submit import build_gateway_loop_receipt, extract_gateway_submission, qlc_submit
 from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
 from fnpqnn_gateway_mvp.web_auth_login import auth_login, list_auth_login_systems
+
+
+FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "qlc_contract"
 
 
 def _qlc_workflow_bundle() -> dict:
@@ -163,6 +167,58 @@ class GatewayCliTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             extract_gateway_submission(bundle)
+
+    def test_qlc_submit_accepts_shared_contract_fixture(self) -> None:
+        bundle = json.loads((FIXTURE_ROOT / "qlc_workflow_image.json").read_text(encoding="utf-8"))
+
+        payload = qlc_submit(bundle, dry_run=True, simulator_url="http://localhost:8000")
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["gateway_status"], "dry_run")
+        self.assertEqual(payload["submission_fingerprint"], payload["loop_receipt"]["fingerprints"]["gateway_submission"])
+
+    def test_qlc_submit_rejects_shared_forbidden_fixture(self) -> None:
+        bundle = json.loads((FIXTURE_ROOT / "qlc_workflow_forbidden_raw.json").read_text(encoding="utf-8"))
+
+        with self.assertRaises(ValueError):
+            qlc_submit(bundle, dry_run=True)
+
+    def test_qlc_submit_rejects_invalid_timeout(self) -> None:
+        with self.assertRaises(ValueError):
+            qlc_submit(_qlc_workflow_bundle(), dry_run=True, timeout=0)
+
+    def test_qlc_submit_can_emit_metrics_with_redacted_tags(self) -> None:
+        emitted: list[tuple[str, tuple[str, ...]]] = []
+
+        def fake_emit(event: str, tags: tuple[str, ...]) -> bool:
+            emitted.append((event, tags))
+            return True
+
+        import fnpqnn_gateway_mvp.qlc_submit as qlc_submit_module
+
+        original = qlc_submit_module.emit_gateway_submit_counter
+        qlc_submit_module.emit_gateway_submit_counter = fake_emit
+        try:
+            payload = qlc_submit(_qlc_workflow_bundle(), dry_run=True, emit_metrics=True)
+        finally:
+            qlc_submit_module.emit_gateway_submit_counter = original
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(emitted[0][0], "submit_ok")
+        self.assertIn("swop_level:high", emitted[0][1])
+
+    def test_openclaw_env_loader_reports_presence_without_values(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text("E2B_API_KEY=test-secret-value\nDD_API_KEY=dd-secret-value\n", encoding="utf-8")
+            payload = load_openclaw_tool_env(env_path, keys=("E2B_API_KEY", "DD_API_KEY"))
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["presence"], {"E2B_API_KEY": True, "DD_API_KEY": True})
+        self.assertFalse(payload["raw_values_printed"])
+        self.assertNotIn("test-secret-value", json.dumps(payload))
 
     def test_gateway_loop_receipt_compacts_simulator_response(self) -> None:
         receipt = build_gateway_loop_receipt(

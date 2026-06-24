@@ -1,0 +1,57 @@
+{
+  "schema": "ffed.qlc.protection_workflow_bundle.v1",
+  "source_id": "fixture-image-001",
+  "media_type": "image",
+  "workflow_fingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+  "raw_media_embedded": false,
+  "raw_payload_embedded": false,
+  "artifacts": {
+    "route_decision": {
+      "schema": "ffed.qlc.celebrum_route_decision.v1",
+      "action": "submit_to_cerebrum",
+      "guard_verdict": "pass",
+      "sensitivity_level": "high"
+    }
+  },
+  "gateway_submission": {
+    "schema": "ffed.qlc.gateway_submission.v1",
+    "source_workflow_schema": "ffed.qlc.protection_workflow_bundle.v1",
+    "workflow_fingerprint": "1111111111111111111111111111111111111111111111111111111111111111",
+    "target_endpoint": "POST /cerebrum/runtime/run",
+    "route_action": "submit_to_cerebrum",
+    "mesh_payload_fingerprint": "image-mesh-fingerprint",
+    "raw_payload_embedded": false,
+    "mesh_payload": {
+      "memories": [
+        {
+          "modality": "video",
+          "starting_time": 0.0,
+          "ending_time": 1.0,
+          "value": 0.82,
+          "label": "qlc-image-region",
+          "source": "ffed-qlc-mvp",
+          "payload_ref": "fixture-image-001"
+        }
+      ],
+      "epochs": 2,
+      "run_qnn": true,
+      "plugin_hook_enabled": true,
+      "plugin_set": "mvp5",
+      "plugin_context": {
+        "orchestrator": "CeLeBrUm",
+        "runtime_memory_surface": "Cerebrum",
+        "sensitivity_weighted_obfuscation_policy": {
+          "schema": "ffed.qlc.sensitivity_weighted_obfuscation_policy.v1",
+          "media_type": "image",
+          "sensitivity_level": "high",
+          "obfuscation_intensity": "strong",
+          "recommended_chunk_mode": "sensitive_dense"
+        }
+      },
+      "cpai_context": {
+        "mesh_enabled": true,
+        "can_connect": true
+      }
+    }
+  }
+}
