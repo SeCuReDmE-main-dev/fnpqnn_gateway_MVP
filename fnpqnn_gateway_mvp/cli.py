@@ -175,6 +175,8 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_qlc.add_argument("--timeout", type=int, default=30)
     gateway_qlc.add_argument("--dry-run", action="store_true")
     gateway_qlc.add_argument("--e2b-enabled", action="store_true")
+    gateway_qlc.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
+    gateway_qlc.add_argument("--emit-metrics", action="store_true")
     gateway_sub.add_parser("version", help="Show gateway version.")
 
     codeproject = sub.add_parser("codeproject", help="Inspect CodeProject.AI Server endpoints, mesh, and tunnels.")
@@ -468,6 +470,8 @@ def run_args(args: argparse.Namespace) -> int:
                     dry_run=args.dry_run,
                     timeout=args.timeout,
                     e2b_enabled=args.e2b_enabled,
+                    env_file=args.env_file,
+                    emit_metrics=args.emit_metrics,
                 ),
                 as_json,
             )

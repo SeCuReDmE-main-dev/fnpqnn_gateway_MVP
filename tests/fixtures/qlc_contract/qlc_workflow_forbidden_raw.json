@@ -1,0 +1,18 @@
+{
+  "schema": "ffed.qlc.protection_workflow_bundle.v1",
+  "source_id": "fixture-forbidden-001",
+  "media_type": "image",
+  "workflow_fingerprint": "4444444444444444444444444444444444444444444444444444444444444444",
+  "raw_media_embedded": false,
+  "raw_payload_embedded": false,
+  "gateway_submission": {
+    "schema": "ffed.qlc.gateway_submission.v1",
+    "workflow_fingerprint": "4444444444444444444444444444444444444444444444444444444444444444",
+    "target_endpoint": "POST /cerebrum/runtime/run",
+    "route_action": "submit_to_cerebrum",
+    "raw_payload_embedded": false,
+    "mesh_payload": {
+      "raw_image": "not-allowed"
+    }
+  }
+}
