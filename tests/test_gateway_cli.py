@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import contextlib
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
 import json
 from pathlib import Path
+import threading
 import unittest
 
 from fnpqnn_gateway_mvp.cli import main
@@ -18,7 +20,7 @@ from fnpqnn_gateway_mvp.hooks import HOOKS
 from fnpqnn_gateway_mvp.model_provider import build_model_provider_switch, model_provider_switch
 from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
 from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
-from fnpqnn_gateway_mvp.qlc_env import load_openclaw_tool_env
+from fnpqnn_gateway_mvp.qlc_env import load_openclaw_tool_env, qlc_tool_readiness
 from fnpqnn_gateway_mvp.qlc_submit import build_gateway_loop_receipt, extract_gateway_submission, qlc_submit
 from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
@@ -60,12 +62,14 @@ def _qlc_workflow_bundle() -> dict:
     }
     return {
         "schema": "ffed.qlc.protection_workflow_bundle.v1",
+        "contract_version": "qlc-wiring-contract.v2",
         "source_id": "asset-001",
         "media_type": "image",
         "workflow_fingerprint": "wf-fp",
         "artifacts": {},
         "gateway_submission": {
             "schema": "ffed.qlc.gateway_submission.v1",
+            "contract_version": "qlc-wiring-contract.v2",
             "source_workflow_schema": "ffed.qlc.protection_workflow_bundle.v1",
             "workflow_fingerprint": "wf-fp",
             "target_endpoint": "POST /cerebrum/runtime/run",
@@ -175,6 +179,8 @@ class GatewayCliTests(unittest.TestCase):
 
         self.assertTrue(payload["success"])
         self.assertEqual(payload["gateway_status"], "dry_run")
+        self.assertEqual(bundle["contract_version"], "qlc-wiring-contract.v2")
+        self.assertEqual(bundle["gateway_submission"]["contract_version"], "qlc-wiring-contract.v2")
         self.assertEqual(payload["submission_fingerprint"], payload["loop_receipt"]["fingerprints"]["gateway_submission"])
 
     def test_qlc_submit_rejects_shared_forbidden_fixture(self) -> None:
@@ -220,6 +226,25 @@ class GatewayCliTests(unittest.TestCase):
         self.assertFalse(payload["raw_values_printed"])
         self.assertNotIn("test-secret-value", json.dumps(payload))
 
+    def test_qlc_tool_readiness_reports_redacted_status(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text(
+                "E2B_API_KEY=e2b-secret-value\nDATADOG_API_KEY=dd-secret-value\nDD_DOGSTATSD_HOST=127.0.0.1\nDD_DOGSTATSD_PORT=8125\n",
+                encoding="utf-8",
+            )
+            payload = qlc_tool_readiness(env_path)
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["schema"], "ffed.qlc.tool_readiness_status.v1")
+        self.assertTrue(payload["e2b_key_present"])
+        self.assertTrue(payload["datadog_key_present"])
+        self.assertTrue(payload["dogstatsd_config_present"])
+        self.assertFalse(payload["raw_values_printed"])
+        self.assertNotIn("secret-value", json.dumps(payload))
+
     def test_gateway_loop_receipt_compacts_simulator_response(self) -> None:
         receipt = build_gateway_loop_receipt(
             _qlc_workflow_bundle(),
@@ -231,7 +256,77 @@ class GatewayCliTests(unittest.TestCase):
         self.assertIn("simulator_result", receipt["fingerprints"])
         self.assertFalse(receipt["raw_payload_embedded"])
 
+    def test_qlc_submit_posts_to_mock_cerebrum_runtime(self) -> None:
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self) -> None:  # noqa: N802
+                body = self.rfile.read(int(self.headers.get("content-length", "0")))
+                payload = json.loads(body.decode("utf-8"))
+                self.server.received_path = self.path  # type: ignore[attr-defined]
+                self.server.received_raw_echo = "raw_image" in json.dumps(payload)  # type: ignore[attr-defined]
+                response = {
+                    "status": "ok",
+                    "runtime": {"feature_dimension": 4, "qlc_runtime": {"schema": "ffed.qlc.runtime_normalized_context.v1"}},
+                    "persistence": {"snapshot": "mock"},
+                }
+                encoded = json.dumps(response).encode("utf-8")
+                self.send_response(200)
+                self.send_header("content-type", "application/json")
+                self.send_header("content-length", str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+
+            def log_message(self, format: str, *args: object) -> None:
+                return
+
+        server = HTTPServer(("127.0.0.1", 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            payload = qlc_submit(_qlc_workflow_bundle(), simulator_url=f"http://127.0.0.1:{server.server_port}", timeout=3)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["gateway_status"], "accepted")
+        self.assertEqual(payload["simulator_status"], "ok")
+        self.assertEqual(server.received_path, "/cerebrum/runtime/run")  # type: ignore[attr-defined]
+        self.assertFalse(server.received_raw_echo)  # type: ignore[attr-defined]
+        self.assertFalse(payload["raw_payload_echoed"])
+        self.assertIn("response_fingerprint", payload)
+
+    def test_qlc_submit_unreachable_runtime_returns_compact_failure(self) -> None:
+        payload = qlc_submit(_qlc_workflow_bundle(), simulator_url="http://127.0.0.1:9", timeout=1)
+
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["gateway_status"], "submit_failed")
+        self.assertEqual(payload["simulator_status"], "submit_failed")
+        self.assertIn("error_type", payload)
+        self.assertLessEqual(len(payload["error"]), 180)
+        self.assertFalse(payload["raw_payload_echoed"])
+
     def test_gateway_qlc_submit_cli_dry_run(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_path = Path(tmp) / "qlc-bundle.json"
+            bundle_path.write_text(json.dumps(_qlc_workflow_bundle()), encoding="utf-8")
+
+            code, output = self.capture([
+                "--json",
+                "gateway",
+                "qlc-readiness",
+                "--env-file",
+                str(bundle_path),
+            ])
+
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["schema"], "ffed.qlc.tool_readiness_status.v1")
+        self.assertFalse(payload["raw_values_printed"])
+
+    def test_gateway_qlc_readiness_cli_reports_redacted_status(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:

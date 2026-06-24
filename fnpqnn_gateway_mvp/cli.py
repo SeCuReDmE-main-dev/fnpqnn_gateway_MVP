@@ -23,6 +23,7 @@ from .model_provider import list_model_provider_routes, model_provider_switch
 from .natural_auth import copilot_status, provider_status
 from .neutrosophic_gate import p114_consensus
 from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
+from .qlc_env import qlc_tool_readiness
 from .qlc_submit import qlc_submit
 from .runner import run_bootstrap_plan, run_hook
 from .skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
@@ -177,6 +178,8 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_qlc.add_argument("--e2b-enabled", action="store_true")
     gateway_qlc.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
     gateway_qlc.add_argument("--emit-metrics", action="store_true")
+    gateway_readiness = gateway_sub.add_parser("qlc-readiness", help="Inspect QLC E2B/Datadog readiness without printing secrets.")
+    gateway_readiness.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
     gateway_sub.add_parser("version", help="Show gateway version.")
 
     codeproject = sub.add_parser("codeproject", help="Inspect CodeProject.AI Server endpoints, mesh, and tunnels.")
@@ -475,6 +478,8 @@ def run_args(args: argparse.Namespace) -> int:
                 ),
                 as_json,
             )
+        if args.gateway_command == "qlc-readiness":
+            return _print(qlc_tool_readiness(args.env_file), as_json)
         if args.gateway_command == "run":
             if args.last:
                 return start_bootstrap(
