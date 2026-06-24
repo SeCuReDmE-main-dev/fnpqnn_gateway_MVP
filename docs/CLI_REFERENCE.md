@@ -35,6 +35,8 @@ fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint -
 fnpqnn gateway doctor --hook simulator
 fnpqnn gateway doctor --hook codeproject-ai --codeproject-url http://localhost:32168
 fnpqnn gateway doctor --hook codeproject-ai-mesh --known-server ai-node-01
+fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --dry-run
+fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --simulator-url http://localhost:8000
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codex --dry-run
 fnpqnn gateway run --hook gemini --dry-run
@@ -56,6 +58,12 @@ Supported options:
 - `--accept-fingerprint` is required by `gateway activate` before the route is considered open.
 - `--write` writes `.fnpqnn_gateway` state and onboarding files.
 - `--force` allows overwriting existing activation/onboarding files.
+
+`gateway qlc-submit` accepts `ffed.qlc.protection_workflow_bundle.v1` or
+`ffed.qlc.gateway_submission.v1`, rejects raw media/OCR/activity/secrets, and
+posts only the `mesh_payload` to `POST /cerebrum/runtime/run`. The response is
+compacted into fingerprints and a `ffed.qlc.gateway_celebrum_loop_receipt.v1`;
+the gateway does not echo raw simulator payloads.
 
 Bootstrap profiles persist the last accepted route in `.fnpqnn_gateway/bootstrap.json`.
 `gateway start` reuses that state and streams the selected server in the

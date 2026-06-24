@@ -23,6 +23,7 @@ from .model_provider import list_model_provider_routes, model_provider_switch
 from .natural_auth import copilot_status, provider_status
 from .neutrosophic_gate import p114_consensus
 from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
+from .qlc_submit import qlc_submit
 from .runner import run_bootstrap_plan, run_hook
 from .skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from .support import support_all, support_provider
@@ -168,6 +169,12 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_doctor.add_argument("--codeproject-url", default=DEFAULT_CODEPROJECT_URL)
     gateway_doctor.add_argument("--known-server", action="append", default=[])
     gateway_doctor.add_argument("--mesh", action="store_true", help="Use mesh diagnostics for CodeProject.AI hooks.")
+    gateway_qlc = gateway_sub.add_parser("qlc-submit", help="Submit a QLC workflow bundle to the FNP-QNN simulator boundary.")
+    gateway_qlc.add_argument("--bundle", required=True)
+    gateway_qlc.add_argument("--simulator-url", default="http://localhost:8000")
+    gateway_qlc.add_argument("--timeout", type=int, default=30)
+    gateway_qlc.add_argument("--dry-run", action="store_true")
+    gateway_qlc.add_argument("--e2b-enabled", action="store_true")
     gateway_sub.add_parser("version", help="Show gateway version.")
 
     codeproject = sub.add_parser("codeproject", help="Inspect CodeProject.AI Server endpoints, mesh, and tunnels.")
@@ -452,6 +459,18 @@ def run_args(args: argparse.Namespace) -> int:
             else:
                 payload = {"success": True, "hook": hook.as_dict(), "dry_run": True}
             return _print(payload, as_json)
+        if args.gateway_command == "qlc-submit":
+            qlc_bundle = json.loads(Path(args.bundle).read_text(encoding="utf-8"))
+            return _print(
+                qlc_submit(
+                    qlc_bundle,
+                    simulator_url=args.simulator_url,
+                    dry_run=args.dry_run,
+                    timeout=args.timeout,
+                    e2b_enabled=args.e2b_enabled,
+                ),
+                as_json,
+            )
         if args.gateway_command == "run":
             if args.last:
                 return start_bootstrap(
