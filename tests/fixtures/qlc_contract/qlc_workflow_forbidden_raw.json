@@ -1,5 +1,6 @@
 {
   "schema": "ffed.qlc.protection_workflow_bundle.v1",
+  "contract_version": "qlc-wiring-contract.v2",
   "source_id": "fixture-forbidden-001",
   "media_type": "image",
   "workflow_fingerprint": "4444444444444444444444444444444444444444444444444444444444444444",
@@ -7,6 +8,7 @@
   "raw_payload_embedded": false,
   "gateway_submission": {
     "schema": "ffed.qlc.gateway_submission.v1",
+    "contract_version": "qlc-wiring-contract.v2",
     "workflow_fingerprint": "4444444444444444444444444444444444444444444444444444444444444444",
     "target_endpoint": "POST /cerebrum/runtime/run",
     "route_action": "submit_to_cerebrum",

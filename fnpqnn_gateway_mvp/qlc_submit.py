@@ -16,6 +16,7 @@ from .telemetry import emit_gateway_submit_counter
 WORKFLOW_SCHEMA = "ffed.qlc.protection_workflow_bundle.v1"
 GATEWAY_SUBMISSION_SCHEMA = "ffed.qlc.gateway_submission.v1"
 LOOP_RECEIPT_SCHEMA = "ffed.qlc.gateway_celebrum_loop_receipt.v1"
+QLC_WIRING_CONTRACT_VERSION = "qlc-wiring-contract.v2"
 RUNTIME_PATH = "/cerebrum/runtime/run"
 
 FORBIDDEN_QCL_SUBMISSION_FIELDS = {
@@ -122,10 +123,21 @@ def extract_gateway_submission(qlc_bundle: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError("QLC submit requires a protection workflow bundle or gateway submission")
     if submission.get("schema") != GATEWAY_SUBMISSION_SCHEMA:
         raise ValueError("QLC gateway submission schema is missing")
+    _validate_contract_version(qlc_bundle, submission)
     if not isinstance(submission.get("mesh_payload"), Mapping):
         raise ValueError("QLC gateway submission requires mesh_payload")
     _reject_forbidden_fields(submission)
     return dict(submission)
+
+
+def _validate_contract_version(qlc_bundle: Mapping[str, Any], submission: Mapping[str, Any]) -> None:
+    bundle_version = str(qlc_bundle.get("contract_version") or "")[:80]
+    submission_version = str(submission.get("contract_version") or "")[:80]
+    contract_version = bundle_version or submission_version
+    if contract_version != QLC_WIRING_CONTRACT_VERSION:
+        raise ValueError("QLC contract_version is missing or unsupported")
+    if submission_version and submission_version != contract_version:
+        raise ValueError("QLC gateway submission contract_version mismatch")
 
 
 def build_gateway_loop_receipt(qlc_bundle: Mapping[str, Any], simulator_result: Mapping[str, Any]) -> dict[str, Any]:

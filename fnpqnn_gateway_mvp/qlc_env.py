@@ -15,6 +15,25 @@ DEFAULT_TOOL_ENV_KEYS = (
 )
 
 
+def qlc_tool_readiness(path: str | Path | None = None) -> dict[str, Any]:
+    """Return redacted local readiness for QLC E2B/Datadog tooling."""
+
+    env_load = load_openclaw_tool_env(path)
+    presence = dict(env_load.get("presence") or {})
+    dogstatsd_host_present = bool(presence.get("DD_DOGSTATSD_HOST") or os.environ.get("DD_DOGSTATSD_HOST"))
+    dogstatsd_port_present = bool(presence.get("DD_DOGSTATSD_PORT") or os.environ.get("DD_DOGSTATSD_PORT"))
+    return {
+        "success": True,
+        "schema": "ffed.qlc.tool_readiness_status.v1",
+        "env_load": env_load,
+        "e2b_key_present": bool(presence.get("E2B_API_KEY")),
+        "datadog_key_present": bool(presence.get("DD_API_KEY") or presence.get("DATADOG_API_KEY")),
+        "dogstatsd_config_present": dogstatsd_host_present and dogstatsd_port_present,
+        "dogstatsd_reachable": "not_checked",
+        "raw_values_printed": False,
+    }
+
+
 def load_openclaw_tool_env(
     path: str | Path | None = None,
     keys: Iterable[str] = DEFAULT_TOOL_ENV_KEYS,
