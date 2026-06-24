@@ -18,10 +18,60 @@ from fnpqnn_gateway_mvp.hooks import HOOKS
 from fnpqnn_gateway_mvp.model_provider import build_model_provider_switch, model_provider_switch
 from fnpqnn_gateway_mvp.neutrosophic_gate import p114_consensus
 from fnpqnn_gateway_mvp.obsidian_bridge import init_obsidian, lvfm_stream, query_notes, record_note
+from fnpqnn_gateway_mvp.qlc_submit import build_gateway_loop_receipt, extract_gateway_submission, qlc_submit
 from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
 from fnpqnn_gateway_mvp.web_auth_login import auth_login, list_auth_login_systems
+
+
+def _qlc_workflow_bundle() -> dict:
+    mesh_payload = {
+        "memories": [
+            {
+                "modality": "stimuli",
+                "starting_time": 0.0,
+                "ending_time": 1.0,
+                "value": 0.7,
+                "label": "qlc-container",
+                "source": "ffed-qlc-mvp",
+                "payload_ref": "asset-001",
+            }
+        ],
+        "label": 1.0,
+        "epochs": 2,
+        "run_qnn": True,
+        "plugin_hook_enabled": True,
+        "plugin_set": "mvp5",
+        "plugin_context": {
+            "orchestrator": "CeLeBrUm",
+            "runtime_memory_surface": "Cerebrum",
+            "sensitivity_weighted_obfuscation_policy": {
+                "schema": "ffed.qlc.sensitivity_weighted_obfuscation_policy.v1",
+                "media_type": "image",
+                "sensitivity_level": "high",
+            },
+        },
+        "cpai_context": {"mesh_enabled": True, "can_connect": True},
+    }
+    return {
+        "schema": "ffed.qlc.protection_workflow_bundle.v1",
+        "source_id": "asset-001",
+        "media_type": "image",
+        "workflow_fingerprint": "wf-fp",
+        "artifacts": {},
+        "gateway_submission": {
+            "schema": "ffed.qlc.gateway_submission.v1",
+            "source_workflow_schema": "ffed.qlc.protection_workflow_bundle.v1",
+            "workflow_fingerprint": "wf-fp",
+            "target_endpoint": "POST /cerebrum/runtime/run",
+            "route_action": "submit_to_cerebrum",
+            "mesh_payload": mesh_payload,
+            "mesh_payload_fingerprint": "mesh-fp",
+            "raw_payload_embedded": False,
+        },
+        "raw_payload_embedded": False,
+    }
 
 
 class GatewayCliTests(unittest.TestCase):
@@ -95,6 +145,57 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("dry-run", output)
         self.assertIn("fnp-qnn", output)
+
+    def test_qlc_submit_dry_run_validates_and_fingerprints_bundle(self) -> None:
+        payload = qlc_submit(_qlc_workflow_bundle(), dry_run=True, simulator_url="http://localhost:8000")
+
+        self.assertTrue(payload["success"])
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(payload["schema"], "ffed.qlc.gateway_submission.v1")
+        self.assertEqual(payload["simulator_status"], "not_run")
+        self.assertFalse(payload["raw_payload_echoed"])
+        self.assertEqual(payload["loop_receipt"]["schema"], "ffed.qlc.gateway_celebrum_loop_receipt.v1")
+        self.assertIn("swop_level:high", payload["datadog_tags"])
+
+    def test_qlc_submit_rejects_raw_secret_or_media_fields(self) -> None:
+        bundle = _qlc_workflow_bundle()
+        bundle["gateway_submission"]["mesh_payload"]["raw_image"] = "not-allowed"
+
+        with self.assertRaises(ValueError):
+            extract_gateway_submission(bundle)
+
+    def test_gateway_loop_receipt_compacts_simulator_response(self) -> None:
+        receipt = build_gateway_loop_receipt(
+            _qlc_workflow_bundle(),
+            {"status": "ok", "runtime": {"feature_dimension": 4}},
+        )
+
+        self.assertEqual(receipt["schema"], "ffed.qlc.gateway_celebrum_loop_receipt.v1")
+        self.assertEqual(receipt["route_action"], "submit_to_cerebrum")
+        self.assertIn("simulator_result", receipt["fingerprints"])
+        self.assertFalse(receipt["raw_payload_embedded"])
+
+    def test_gateway_qlc_submit_cli_dry_run(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_path = Path(tmp) / "qlc-bundle.json"
+            bundle_path.write_text(json.dumps(_qlc_workflow_bundle()), encoding="utf-8")
+
+            code, output = self.capture([
+                "--json",
+                "gateway",
+                "qlc-submit",
+                "--bundle",
+                str(bundle_path),
+                "--dry-run",
+                "--e2b-enabled",
+            ])
+
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertTrue(payload["dry_run"])
+        self.assertIn("e2b_enabled:true", payload["datadog_tags"])
 
     def test_unreachable_url_returns_support_action(self) -> None:
         payload = status("http://127.0.0.1:9", timeout=0.2)
