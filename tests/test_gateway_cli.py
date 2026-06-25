@@ -24,6 +24,7 @@ from fnpqnn_gateway_mvp.qlc_env import load_openclaw_tool_env, qlc_tool_readines
 from fnpqnn_gateway_mvp.qlc_submit import build_gateway_loop_receipt, extract_gateway_submission, qlc_submit
 from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
+from fnpqnn_gateway_mvp.telemetry import _sanitize as sanitize_metric_token
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
 from fnpqnn_gateway_mvp.web_auth_login import auth_login, list_auth_login_systems
 
@@ -193,6 +194,18 @@ class GatewayCliTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             qlc_submit(_qlc_workflow_bundle(), dry_run=True, timeout=0)
 
+    def test_qlc_submit_rejects_non_loopback_simulator_url(self) -> None:
+        blocked_urls = [
+            "file:///etc/passwd",
+            "http://example.com:8000",
+            "https://192.168.1.10:8000",
+            "http://user:pass@localhost:8000",
+        ]
+        for url in blocked_urls:
+            with self.subTest(url=url):
+                with self.assertRaises(ValueError):
+                    qlc_submit(_qlc_workflow_bundle(), dry_run=True, simulator_url=url)
+
     def test_qlc_submit_can_emit_metrics_with_redacted_tags(self) -> None:
         emitted: list[tuple[str, tuple[str, ...]]] = []
 
@@ -212,6 +225,16 @@ class GatewayCliTests(unittest.TestCase):
         self.assertTrue(payload["success"])
         self.assertEqual(emitted[0][0], "submit_ok")
         self.assertIn("swop_level:high", emitted[0][1])
+
+    def test_dogstatsd_sanitizer_rejects_injection_delimiters_and_bounds_length(self) -> None:
+        unsafe = "metric|c\nsecond:tag,another" + ("x" * 200)
+        safe = sanitize_metric_token(unsafe)
+
+        self.assertNotIn("|", safe)
+        self.assertNotIn("\n", safe)
+        self.assertNotIn(":", safe)
+        self.assertNotIn(",", safe)
+        self.assertLessEqual(len(safe), 120)
 
     def test_openclaw_env_loader_reports_presence_without_values(self) -> None:
         import tempfile

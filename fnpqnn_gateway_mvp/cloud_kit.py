@@ -18,7 +18,7 @@ from typing import Any
 from .activation import route_for_tool
 
 
-DEFAULT_OPENCLAW_ENV = Path.home() / ".openclaw" / "workspace" / ".env"
+DEFAULT_OPENCLAW_ENV = Path(os.getenv("OPENCLAW_WORKSPACE_ENV", Path.home() / ".openclaw" / "workspace" / ".env")).resolve()
 
 
 def _now() -> str:
@@ -92,11 +92,15 @@ def e2b_smoke(env_file: str | Path | None = None) -> dict[str, Any]:
     try:
         from e2b import Sandbox
     except Exception as exc:
+        error_msg = str(exc)
+        api_key = os.environ.get("E2B_API_KEY")
+        if api_key and api_key in error_msg:
+            error_msg = error_msg.replace(api_key, "[REDACTED_API_KEY]")
         return {
             "success": False,
             "provider": "e2b",
             "env_load": env_load,
-            "error": f"e2b package unavailable: {type(exc).__name__}: {exc}",
+            "error": f"e2b package unavailable: {type(exc).__name__}: {error_msg}",
             "raw_token_stored": False,
         }
     try:
@@ -112,11 +116,15 @@ def e2b_smoke(env_file: str | Path | None = None) -> dict[str, Any]:
             "raw_token_stored": False,
         }
     except Exception as exc:
+        error_msg = str(exc)
+        api_key = os.environ.get("E2B_API_KEY")
+        if api_key and api_key in error_msg:
+            error_msg = error_msg.replace(api_key, "[REDACTED_API_KEY]")
         return {
             "success": False,
             "provider": "e2b",
             "env_load": env_load,
-            "error": f"{type(exc).__name__}: {exc}",
+            "error": f"{type(exc).__name__}: {error_msg}",
             "raw_token_stored": False,
         }
 

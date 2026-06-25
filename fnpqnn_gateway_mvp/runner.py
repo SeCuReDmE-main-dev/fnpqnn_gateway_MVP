@@ -10,6 +10,7 @@ Security rules:
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from typing import Iterable
@@ -22,12 +23,18 @@ from .tunnel import tunnel_status
 
 
 def _emit(event: dict[str, object], jsonl: bool = False) -> None:
+    message = str(event.get("message", ""))
+    for key in ("E2B_API_KEY", "DD_API_KEY", "DATADOG_API_KEY"):
+        val = os.environ.get(key)
+        if val and val in message:
+            message = message.replace(val, f"[REDACTED_{key}]")
+    event_copy = dict(event)
+    event_copy["message"] = message
     if jsonl:
-        print(json.dumps(event, sort_keys=True))
+        print(json.dumps(event_copy, sort_keys=True))
     else:
-        level = event.get("level", "info")
-        source = event.get("source", "gateway")
-        message = event.get("message", "")
+        level = event_copy.get("level", "info")
+        source = event_copy.get("source", "gateway")
         print(f"[{level}] {source}: {message}")
 
 

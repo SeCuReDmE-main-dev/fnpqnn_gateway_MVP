@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-DEFAULT_OPENCLAW_ENV = Path.home() / ".openclaw" / "workspace" / ".env"
+DEFAULT_OPENCLAW_ENV = Path(os.getenv("OPENCLAW_WORKSPACE_ENV", Path.home() / ".openclaw" / "workspace" / ".env")).resolve()
 DEFAULT_TOOL_ENV_KEYS = (
     "E2B_API_KEY",
     "DD_API_KEY",

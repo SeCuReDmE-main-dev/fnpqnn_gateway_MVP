@@ -250,7 +250,7 @@ def build_skill_creator_plan(
         raise ValueError(f"unknown skill resources: {', '.join(invalid)}")
     skill_dir = base_output / slug
     skill_md = skill_dir / "SKILL.md"
-    validation_command = f"python C:\\Users\\jeans\\.codex\\skills\\.system\\skill-creator\\scripts\\quick_validate.py \"{skill_dir}\""
+    validation_command = f"python -m quick_validate \"{skill_dir}\""
     exit_payload = {
         "status": "planned",
         "skill_name": slug,
