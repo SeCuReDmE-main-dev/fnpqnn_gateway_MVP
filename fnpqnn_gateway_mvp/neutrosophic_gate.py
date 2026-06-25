@@ -14,7 +14,7 @@ from typing import Any, Iterable, Mapping
 
 
 P114_PLUGIN_ID = "p114_ffed_neutrosophic_consensus"
-DEFAULT_PLUGINPACK_PATH = Path(os.getenv("FNP_QNN_FFED_PLUGINPACK_PATH", r"C:\Users\jeans\Desktop\pluginpack"))
+DEFAULT_PLUGINPACK_PATH = Path(os.getenv("FNP_QNN_FFED_PLUGINPACK_PATH", "./pluginpack")).resolve()
 
 
 def p114_items_from_note(title: str, content: str, tags: Iterable[str] | None = None, source: str = "gateway-note") -> list[dict[str, Any]]:
@@ -44,11 +44,20 @@ def p114_consensus(
             }
         )
     try:
-        pluginpack_text = str(pluginpack)
-        if pluginpack_text not in sys.path:
-            sys.path.insert(0, pluginpack_text)
-        from ffed_runtime import run_plugin  # type: ignore
-    except Exception as exc:
+        import importlib.util
+        target_file = pluginpack / "ffed_runtime" / "__init__.py"
+        if not pluginpack.is_dir():
+            raise ValueError(f"Pluginpack path is not a directory: {pluginpack}")
+        if not target_file.is_file():
+            raise ImportError(f"ffed_runtime package not found in pluginpack: {target_file}")
+        spec = importlib.util.spec_from_file_location("ffed_runtime", str(target_file))
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load ffed_runtime from {target_file}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules["ffed_runtime"] = module
+        spec.loader.exec_module(module)
+        run_plugin = module.run_plugin
+    except (ImportError, OSError, ValueError) as exc:
         return _gate_payload(
             {
                 "status": "disabled",

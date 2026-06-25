@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 from urllib import request
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
 
 from .qlc_env import DEFAULT_OPENCLAW_ENV, load_openclaw_tool_env
 from .telemetry import emit_gateway_submit_counter
@@ -57,6 +59,7 @@ def qlc_submit(
 
     if timeout <= 0:
         raise ValueError("timeout must be greater than zero")
+    _validate_simulator_url(simulator_url)
     submission = extract_gateway_submission(qlc_bundle)
     runtime_payload = _mapping(submission.get("mesh_payload"))
     runtime_fingerprint = _fingerprint(runtime_payload)
@@ -165,10 +168,30 @@ def build_gateway_loop_receipt(qlc_bundle: Mapping[str, Any], simulator_result: 
 
 
 def _runtime_endpoint(simulator_url: str) -> str:
+    _validate_simulator_url(simulator_url)
     normalized = simulator_url.rstrip("/")
     if normalized.endswith(RUNTIME_PATH):
         return normalized
     return f"{normalized}{RUNTIME_PATH}"
+
+
+def _validate_simulator_url(simulator_url: str) -> None:
+    parsed = urlparse(simulator_url)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("simulator_url must use HTTP or HTTPS")
+    if parsed.username or parsed.password:
+        raise ValueError("simulator_url must not include userinfo")
+    if not parsed.hostname:
+        raise ValueError("simulator_url must include a host")
+    host = parsed.hostname.strip().lower()
+    if host == "localhost":
+        return
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError as exc:
+        raise ValueError("simulator_url must target localhost or a loopback IP") from exc
+    if not address.is_loopback:
+        raise ValueError("simulator_url must target localhost or a loopback IP")
 
 
 def _env_not_loaded(env_file: str | Path | None) -> dict[str, Any]:
