@@ -14,7 +14,7 @@ import subprocess
 from typing import Any
 
 
-PROVIDERS = ("openai", "google", "ollama", "github-copilot")
+PROVIDERS = ("openai", "google", "github-copilot")
 TOKEN_PATTERNS = (
     re.compile(r"gh[pousr]_[A-Za-z0-9_]+"),
     re.compile(r"github_pat_[A-Za-z0-9_]+"),
@@ -96,5 +96,11 @@ def provider_status(provider: str) -> dict[str, Any]:
     if normalized == "google":
         return {"success": True, "provider": "google", "instructions": ["Use Gemini/Google's native browser, gcloud, or IDE login."], "raw_token_stored": False}
     if normalized == "ollama":
-        return {"success": True, "provider": "ollama", "instructions": ["Use `ollama signin` or OLLAMA_API_KEY for Ollama Cloud."], "raw_token_stored": False}
+        return {
+            "success": False,
+            "provider": "ollama",
+            "instructions": ["Ollama Cloud is not an official school provider; use Codex/OpenAI or Antigravity/Gemini."],
+            "raw_token_stored": False,
+            "official_school_route": False,
+        }
     raise ValueError(f"unsupported auth provider: {provider}")

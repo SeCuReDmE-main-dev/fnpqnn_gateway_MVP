@@ -81,20 +81,6 @@ HOOKS: Mapping[str, HookSpec] = {
         preflight=(("fnp-qnn", "support", "provider", "google"), ("fnp-qnn", "agent", "wake-prompt", "antigravity")),
         server_command=("fnp-qnn", "operator", "api", "serve"),
     ),
-    "ollama": HookSpec(
-        name="ollama",
-        kind="external-agent",
-        description="FNP-QNN simulator with local Ollama support preflight.",
-        preflight=(("fnp-qnn", "support", "provider", "ollama"), ("fnp-qnn", "agent", "wake-prompt", "ollama")),
-        server_command=("fnp-qnn", "operator", "api", "serve"),
-    ),
-    "ollama-cloud": HookSpec(
-        name="ollama-cloud",
-        kind="external-agent",
-        description="FNP-QNN simulator with Ollama Cloud/OpenClaw support preflight.",
-        preflight=(("fnp-qnn", "support", "provider", "ollama"), ("fnp-qnn", "agent", "wake-prompt", "ollama")),
-        server_command=("fnp-qnn", "operator", "api", "serve"),
-    ),
     "agent-platform": HookSpec(
         name="agent-platform",
         kind="external-agent",

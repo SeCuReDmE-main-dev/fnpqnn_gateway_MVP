@@ -2,11 +2,13 @@
 
 Standalone gateway CLI for the FNP-QNN simulator MVP.
 
+> **Official school governance.** The maintained classroom gateway supports Codex/OpenAI and Antigravity/Gemini as the only official AI-assisted school routes. Ollama Cloud is not an official school provider. See [SCHOOL_TOOL_GOVERNANCE.md](SCHOOL_TOOL_GOVERNANCE.md) and [AGENTS.md](AGENTS.md).
+
 The package provides one `fnpqnn` command surface for:
 
 - launching the branded simulator TUI through `fnpqnn --tui` when the simulator package is installed;
-- running or diagnosing gateway hooks for the simulator, Codex, Gemini, Ollama Cloud, external agent platforms, CodeProject.AI Server, and CodeProject.AI mesh;
-- checking natural auth readiness for OpenAI/ChatGPT, Google/Gemini, Ollama, and GitHub Copilot without storing raw tokens;
+- running or diagnosing gateway hooks for the simulator, Codex, Gemini, external agent platforms, CodeProject.AI Server, and CodeProject.AI mesh;
+- checking natural auth readiness for OpenAI/ChatGPT, Google/Gemini, and GitHub Copilot without storing raw tokens;
 - validating CodeProject.AI Server local, mesh, or tunnel URLs as HTTP backends;
 - admitting Obsidian RAG notes with p114 neutrosophic T/I/F gate metadata;
 - keeping the simulator usable without any AI account.
@@ -27,7 +29,6 @@ fnpqnn --tui
 fnpqnn gateway hooks
 fnpqnn gateway bootstrap --profile natural --fingerprint fp-natural --accept-fingerprint
 fnpqnn gateway bootstrap --profile vscode --fingerprint fp-vscode --accept-fingerprint --codeproject-url http://localhost:32168
-fnpqnn gateway bootstrap --profile ollama-cloud --fingerprint fp-ollama --accept-fingerprint
 fnpqnn gateway bootstrap --profile openclaw --fingerprint fp-openclaw --accept-fingerprint
 fnpqnn gateway start --dry-run
 fnpqnn gateway run --hook simulator --dry-run
@@ -47,7 +48,6 @@ fnpqnn function auth-login --system cloud-kit --dry-run
 fnpqnn auth provider-routes
 fnpqnn auth model-switch --tool codex --fingerprint fp-123 --dry-run
 fnpqnn auth model-switch --last --dry-run
-fnpqnn function provider-switch --tool ollama-cloud --fingerprint fp-ollama --dry-run
 fnpqnn gateway activation-routes
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --dry-run
 fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --write
@@ -57,7 +57,7 @@ fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "
 fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn function skill-creator --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
-fnpqnn gateway deepsearch-skill --query "validate this research" --system ollama-cloud --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --system antigravity --dry-run
 fnpqnn function deepsearch --query "validate this research" --last-auth --write
 fnpqnn codeproject yolo-status --url http://localhost:32168 --dry-run
 fnpqnn codeproject yolo-training-status --url http://localhost:32168 --dry-run
@@ -79,14 +79,14 @@ GitHub Copilot is exposed as an auth/support provider only. It is intentionally 
 
 ## Fingerprint activation
 
-After a natural login is approved, `fnpqnn auth fingerprint accept` maps the accepted fingerprint to the chosen tool, writes gateway state and onboarding files, then leaves the selected agent in its native surface. Codex uses Codex, Gemini uses Gemini/Antigravity, Ollama uses Ollama/OpenClaw, Copilot stays in the IDE, and the simulator functions are exposed through gateway state, docs, and runtime hook commands.
+After a natural login is approved, `fnpqnn auth fingerprint accept` maps the accepted fingerprint to the chosen tool, writes gateway state and onboarding files, then leaves the selected agent in its native surface. Codex uses Codex, Gemini uses Gemini/Antigravity, Copilot stays in the IDE as support-only, and the simulator functions are exposed through gateway state, docs, and runtime hook commands.
 
 See `docs/ACTIVATION_HANDOFF.md`.
 
 `fnpqnn gateway bootstrap` is the persistent launch form of the same contract.
 It writes `.fnpqnn_gateway/bootstrap.json` only after an accepted fingerprint,
 and `fnpqnn gateway start` reuses the last accepted profile. Profiles include
-`natural`, `codex`, `antigravity`, `vscode`, `ollama-cloud`, `openclaw`,
+`natural`, `codex`, `antigravity`, `vscode`, `openclaw`,
 `cloud-kit`, and `docker-kit`.
 
 `fnpqnn auth login` builds the web-auth hook wrapper for a selected system.
@@ -113,8 +113,7 @@ same no-secret/no-provider-absorption boundary. The function-style alias is
 `fnpqnn function skill-creator`.
 
 `fnpqnn gateway deepsearch-skill` creates the simulator native web-search
-contract from the selected authlog session. Ollama Cloud and
-Google/Antigravity routes use their provider-native web-search surface; systems
+contract from the selected authlog session. Google/Antigravity routes use their provider-native web-search surface; systems
 without a declared native search route fall back to
 `antigravity-gemini-google-search`. The alias is `fnpqnn function deepsearch`.
 The contract is written under `.fnpqnn_gateway/deepsearch` only when `--write`
@@ -126,7 +125,6 @@ is used, and it never stores tokens, cookies, API keys, or `.env` material.
 
 - Codex uses native Codex skills/plugins to help the simulator.
 - Antigravity/Gemini uses native IDE/agent features to help the simulator.
-- Ollama/OpenClaw uses native model/platform routing to help the simulator.
 - Copilot stays an IDE support surface while the simulator hook remains local.
 - CodeProject.AI Server stays an HTTP or mesh backend.
 - CodeProject.AI YOLO inference and `Training for YoloV5 6.2` use documented CodeProject.AI routes.
@@ -159,7 +157,7 @@ fnpqnn gateway capability-map --tool codex
 fnpqnn gateway skill-request --tool codex --name simulator-gate-builder --goal "Create a simulator skill that designs safe LVFM gates." --dry-run
 ```
 
-The same pattern exists for Antigravity/Gemini, Ollama/OpenClaw, Copilot,
+The same pattern exists for Antigravity/Gemini, Copilot,
 CodeProject.AI Server, and external agent platforms. Each native tool keeps its
 own skills and interface. The gateway provides the route, prompts, docs, and
 simulator-facing command contract.

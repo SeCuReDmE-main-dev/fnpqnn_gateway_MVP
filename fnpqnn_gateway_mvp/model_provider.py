@@ -59,14 +59,6 @@ PROVIDER_ROUTES: dict[str, ProviderRoute] = {
         native_login_instruction="Use Gemini, Antigravity, or gcloud native login if web auth is unavailable.",
         instructions=("Do not ask for secrets. Managed env state may be built only after a successful web-auth fingerprint.",),
     ),
-    "ollama": ProviderRoute(
-        provider="ollama",
-        model_provider="ollama",
-        default_auth_source="web-auth",
-        web_auth_instruction="Open the Ollama Cloud browser login and accept the returned fingerprint.",
-        native_login_instruction="Use `ollama signin` or local Ollama native auth if web auth is unavailable.",
-        instructions=("Do not ask for secrets. Managed env state may be built only after a successful web-auth fingerprint.",),
-    ),
     "github-copilot": ProviderRoute(
         provider="github-copilot",
         model_provider="github-copilot",

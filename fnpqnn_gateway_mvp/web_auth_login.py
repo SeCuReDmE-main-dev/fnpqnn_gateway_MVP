@@ -87,16 +87,6 @@ AUTH_LOGIN_SYSTEMS: dict[str, AuthLoginSystem] = {
         runtime_relation="Copilot support only; simulator runtime remains local",
         support_only=True,
     ),
-    "ollama-cloud": AuthLoginSystem(
-        system="ollama-cloud",
-        label="Ollama Cloud",
-        tool="ollama-cloud",
-        provider="ollama",
-        web_auth_target="Ollama Cloud browser login",
-        web_auth_url="https://ollama.com/signin",
-        native_fallback="Use Ollama native sign-in if browser login is unavailable.",
-        runtime_relation="ollama-cloud hook with simulator foreground runtime",
-    ),
     "openclaw": AuthLoginSystem(
         system="openclaw",
         label="OpenClaw",
@@ -305,7 +295,7 @@ def build_auth_login_plan(
             ),
             "bootstrap": (
                 f"fnpqnn gateway bootstrap --profile {selected.system} --fingerprint <fp> --accept-fingerprint"
-                if selected.system in {"natural", "codex", "antigravity", "vscode", "ollama-cloud", "openclaw", "cloud-kit", "docker-kit"}
+                if selected.system in {"natural", "codex", "antigravity", "vscode", "openclaw", "cloud-kit", "docker-kit"}
                 else "not-applicable"
             ),
         },

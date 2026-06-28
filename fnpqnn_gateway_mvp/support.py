@@ -6,7 +6,7 @@ from .hooks import HOOKS
 from .natural_auth import provider_status
 
 
-AUTH_PROVIDERS = ("openai", "google", "ollama", "github-copilot")
+AUTH_PROVIDERS = ("openai", "google", "github-copilot")
 
 
 def support_provider(provider: str) -> dict[str, object]:

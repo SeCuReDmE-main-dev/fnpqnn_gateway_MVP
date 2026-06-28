@@ -1,6 +1,6 @@
 """Native tool capability bridge.
 
-The gateway does not reimplement Codex, Gemini, Ollama, Copilot, or their
+The gateway does not reimplement Codex, Gemini, Copilot, or their
 plugin systems. It describes simulator capabilities in a form the selected
 native tool can consume with its own skills/plugins.
 """
@@ -38,14 +38,6 @@ NATIVE_TOOL_CAPABILITIES = {
         "Use Antigravity native IDE agent workflows and project context.",
         "Use Google account-approved capabilities without copying secrets into the gateway.",
         "Create or run Antigravity-native tasks while the simulator remains a separate CLI/HTTP surface.",
-    ),
-    "ollama": (
-        "Use local Ollama model/runtime capabilities.",
-        "Use local model routing without requiring cloud login unless explicitly approved.",
-    ),
-    "ollama-cloud": (
-        "Use Ollama/OpenClaw model and local/cloud routing capabilities.",
-        "Use local model selection and OpenClaw bridge behavior when approved.",
     ),
     "github-copilot": (
         "Use Copilot IDE context, completions, chat, and workspace assistance.",

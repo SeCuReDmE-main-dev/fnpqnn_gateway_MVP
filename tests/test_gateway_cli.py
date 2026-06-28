@@ -96,8 +96,6 @@ class GatewayCliTests(unittest.TestCase):
             "codex",
             "gemini",
             "antigravity",
-            "ollama",
-            "ollama-cloud",
             "agent-platform",
             "openclaw",
             "codeproject-ai",
@@ -406,7 +404,7 @@ class GatewayCliTests(unittest.TestCase):
         import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:
-            payload = activate("ollama-cloud", "fp-ollama-123", workspace=tmp, accept_fingerprint=True, write=True)
+            payload = activate("codex", "fp-codex-123", workspace=tmp, accept_fingerprint=True, write=True)
             self.assertTrue(payload["success"])
             self.assertTrue(Path(payload["paths"]["activation"]).exists())
             self.assertTrue(Path(payload["paths"]["agents"]).exists())
@@ -430,7 +428,6 @@ class GatewayCliTests(unittest.TestCase):
         expected = {
             "codex": "codex",
             "antigravity": "antigravity",
-            "ollama-cloud": "ollama-cloud",
             "openclaw": "openclaw",
         }
         for profile, hook in expected.items():
@@ -484,7 +481,8 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         payload = json.loads(output)
         names = {profile["name"] for profile in payload["profiles"]}
-        self.assertTrue({"natural", "vscode", "ollama-cloud", "openclaw", "cloud-kit", "docker-kit"}.issubset(names))
+        self.assertTrue({"natural", "vscode", "openclaw", "cloud-kit", "docker-kit"}.issubset(names))
+        self.assertNotIn("ollama-cloud", names)
 
     def test_gateway_bootstrap_profile_dry_run_can_omit_fingerprint(self) -> None:
         code, output = self.capture(["--json", "gateway", "bootstrap", "--profile", "codex", "--dry-run"])
@@ -563,14 +561,14 @@ class GatewayCliTests(unittest.TestCase):
             "auth",
             "model-switch",
             "--tool",
-            "ollama-cloud",
+            "antigravity",
             "--fingerprint",
-            "fp-ollama",
+            "fp-google",
             "--dry-run",
         ])
         self.assertEqual(code, 0)
         payload = json.loads(output)
-        self.assertEqual(payload["provider"]["provider"], "ollama")
+        self.assertEqual(payload["provider"]["provider"], "google")
         self.assertEqual(payload["selected_auth_source"], "web-auth")
 
     def test_function_provider_switch_alias_cli(self) -> None:
@@ -608,7 +606,6 @@ class GatewayCliTests(unittest.TestCase):
             "codex",
             "antigravity",
             "vscode",
-            "ollama-cloud",
             "openclaw",
             "cloud-kit",
             "docker-kit",
@@ -859,10 +856,10 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(payload["bootstrap_route"]["tool"], "codex")
         self.assertIn("exit_contract", payload)
 
-    def test_deepsearch_ollama_cloud_uses_native_route(self) -> None:
-        payload = build_deepsearch_skill(query="validate simulator research", system="ollama-cloud")
+    def test_deepsearch_antigravity_uses_official_school_route(self) -> None:
+        payload = build_deepsearch_skill(query="validate simulator research", system="antigravity")
         self.assertTrue(payload["success"])
-        self.assertEqual(payload["search_route"]["route"], "ollama-cloud-web-search")
+        self.assertEqual(payload["search_route"]["route"], "antigravity-gemini-google-search")
         self.assertFalse(payload["search_route"]["fallback_used"])
         self.assertTrue(payload["policy"]["no_generic_scraper_first"])
         self.assertFalse(payload["raw_secret_stored"])
@@ -911,12 +908,12 @@ class GatewayCliTests(unittest.TestCase):
             "--query",
             "research validation",
             "--system",
-            "ollama-cloud",
+            "antigravity",
             "--dry-run",
         ])
         self.assertEqual(code, 0)
         payload = json.loads(output)
-        self.assertEqual(payload["search_route"]["route"], "ollama-cloud-web-search")
+        self.assertEqual(payload["search_route"]["route"], "antigravity-gemini-google-search")
         self.assertIn("simulator_skill", payload)
 
     def test_function_deepsearch_alias_cli(self) -> None:
@@ -947,7 +944,6 @@ class GatewayCliTests(unittest.TestCase):
             "antigravity": ("google", "antigravity"),
             "codeproject-ai-server": (None, "codeproject-ai-server"),
             "github-copilot": ("github-copilot", "simulator"),
-            "ollama": ("ollama", "ollama"),
             "openclaw": (None, "openclaw"),
         }
         for tool, (provider, hook) in expected.items():

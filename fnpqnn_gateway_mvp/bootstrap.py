@@ -67,11 +67,6 @@ BOOTSTRAP_PROFILES: dict[str, BootstrapProfile] = {
         description="VS Code/Copilot support route with CodeProject.AI Server tunnel diagnostics.",
         codeproject_tunnel=True,
     ),
-    "ollama-cloud": BootstrapProfile(
-        name="ollama-cloud",
-        tool="ollama-cloud",
-        description="Ollama Cloud/OpenClaw native handoff with simulator API foreground launch.",
-    ),
     "openclaw": BootstrapProfile(
         name="openclaw",
         tool="openclaw",

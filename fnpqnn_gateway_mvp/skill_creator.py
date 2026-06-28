@@ -47,7 +47,6 @@ PROFILE_NOTES = {
     "codex": "Create a Codex-compatible skill plan with valid SKILL.md frontmatter.",
     "antigravity": "Create an Antigravity/Gemini handoff contract without installing Codex assets.",
     "vscode": "Create a Copilot/VS Code documentation and task handoff; Copilot stays support-only.",
-    "ollama-cloud": "Create an Ollama/OpenClaw model-routing skill handoff.",
     "openclaw": "Create an OpenClaw control-plane skill handoff.",
     "cloud-kit": "Create a cloud bootstrap skill handoff with E2B/CloudKit boundaries.",
     "docker-kit": "Create a containerized bootstrap skill handoff.",

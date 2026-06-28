@@ -3,7 +3,8 @@
 The gateway does not scrape by default. It routes the simulator deepsearch
 skill to the provider-native search surface selected by the user's authlog,
 then falls back to Antigravity/Gemini when the selected provider has no
-declared native web-search route.
+declared native web-search route. Ollama Cloud is not an official school
+provider route.
 """
 
 from __future__ import annotations
@@ -21,14 +22,6 @@ DEEPSEARCH_DIR = ".fnpqnn_gateway/deepsearch"
 DEEPSEARCH_SKILL_NAME = "native-web-search"
 
 NATIVE_WEB_SEARCH_ROUTES: dict[str, dict[str, Any]] = {
-    "ollama": {
-        "route": "ollama-cloud-web-search",
-        "provider": "ollama",
-        "system": "ollama-cloud",
-        "runtime_hook": "ollama-cloud",
-        "strategy": "Use the Ollama Cloud native web-search function exposed by the authenticated account.",
-        "provider_native_available": True,
-    },
     "google": {
         "route": "antigravity-gemini-google-search",
         "provider": "google",
@@ -115,7 +108,7 @@ def _resolve_authlog(
         return {
             "success": False,
             "error": "deepsearch requires --last-auth or --system <system>",
-            "next_step": "Use --last-auth to reuse the latest accepted authlog, or pass --system ollama-cloud/google/antigravity.",
+            "next_step": "Use --last-auth to reuse the latest accepted authlog, or pass --system google/antigravity.",
         }
 
     selected = system.strip().lower()
