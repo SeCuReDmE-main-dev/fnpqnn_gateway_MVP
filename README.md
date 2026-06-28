@@ -21,7 +21,7 @@
   </a>
 </p>
 
-> **Startup support acknowledgement.** This SecuredMe school tool is part of the suite supported through E2B for Startups and Datadog for Startups. E2B is used as an optional isolated sandbox and audit lane; Datadog is used as an optional observability and review-support lane. No E2B or Datadog secret is stored in this README.
+> **Startup support acknowledgement.** The shared SecuredMe gateway is the suite-level integration point for optional E2B audit sandboxes and optional Datadog observability. This gateway may route configured school-tool audit and review signals through those lanes, while keeping secrets out of public docs and repository output.
 <!-- SECUREDME-STARTUP-SUPPORT:END -->
 
 
@@ -284,6 +284,7 @@ contract and the exact next commands for:
 The simulator-side encryption and LVFM conversion lives in the main
 `FNP-QNN-MVP` repo under `core/cloud_rag_bridge.py` and CLI commands
 `fnp-qnn cloud-kit rag-*`.
+
 
 
 
