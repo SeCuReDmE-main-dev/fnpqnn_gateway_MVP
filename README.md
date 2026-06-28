@@ -7,6 +7,8 @@ The reason for excluding generic local AI routes from official school mode is st
 
 > **Development status.** This school tool is currently tagged **pre-alpha / in development**. External PRs are not evaluated for merge until the maintained tool reaches a stable, fully functional 100% classroom release after the pre-alpha phase. Issues and forks remain allowed, but official PR review is paused until that stability gate is met.
 
+> **SecuredMe Education visual theme.** This shared infrastructure repository uses the Education suite visual package for consistency, without replacing the separate FNP-QNN simulator identity. See [assets/securedme/education](assets/securedme/education).
+
 
 Standalone gateway CLI for the FNP-QNN simulator MVP.
 
