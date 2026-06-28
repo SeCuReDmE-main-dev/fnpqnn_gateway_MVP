@@ -1,5 +1,8 @@
 # fnpqnn_gateway_MVP
 
+> **Development status.** This school tool is currently tagged **pre-alpha / in development**. External PRs are not evaluated for merge until the maintained tool reaches a stable, fully functional 100% classroom release after the pre-alpha phase. Issues and forks remain allowed, but official PR review is paused until that stability gate is met.
+
+
 Standalone gateway CLI for the FNP-QNN simulator MVP.
 
 > **Official school governance.** The maintained classroom gateway supports Codex/OpenAI and Antigravity/Gemini as the only official AI-assisted school routes. Ollama Cloud is not an official school provider. See [SCHOOL_TOOL_GOVERNANCE.md](SCHOOL_TOOL_GOVERNANCE.md) and [AGENTS.md](AGENTS.md).
@@ -247,3 +250,5 @@ contract and the exact next commands for:
 The simulator-side encryption and LVFM conversion lives in the main
 `FNP-QNN-MVP` repo under `core/cloud_rag_bridge.py` and CLI commands
 `fnp-qnn cloud-kit rag-*`.
+
+
