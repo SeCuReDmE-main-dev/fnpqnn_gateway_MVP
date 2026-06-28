@@ -11,6 +11,20 @@
 [![Branch](https://img.shields.io/badge/branch-main-0E7490)](https://github.com/SeCuReDmE-main-dev/fnpqnn_gateway_MVP/tree/main)
 <!-- SECUREDME-SUITE-BADGES:END -->
 
+<!-- SECUREDME-STARTUP-SUPPORT:START -->
+<p align="center">
+  <a href="https://e2b.dev/startups">
+    <img alt="Supported by E2B for Startups" src="https://img.shields.io/badge/Supported%20by-E2B%20for%20Startups-FF8800?style=for-the-badge" />
+  </a>
+  <a href="https://www.datadoghq.com/partner/datadog-for-startups/">
+    <img alt="Supported by Datadog for Startups" src="https://img.shields.io/badge/Supported%20by-Datadog%20for%20Startups-632CA6?style=for-the-badge&amp;logo=datadog&amp;logoColor=white" />
+  </a>
+</p>
+
+> **Startup support acknowledgement.** This SecuredMe school tool is part of the suite supported through E2B for Startups and Datadog for Startups. E2B is used as an optional isolated sandbox and audit lane; Datadog is used as an optional observability and review-support lane. No E2B or Datadog secret is stored in this README.
+<!-- SECUREDME-STARTUP-SUPPORT:END -->
+
+
 
 
 ## School Authentication And Secret Boundary
@@ -270,6 +284,7 @@ contract and the exact next commands for:
 The simulator-side encryption and LVFM conversion lives in the main
 `FNP-QNN-MVP` repo under `core/cloud_rag_bridge.py` and CLI commands
 `fnp-qnn cloud-kit rag-*`.
+
 
 
 
