@@ -13,5 +13,8 @@ Other AI agents must not rewrite the official school mechanism directly. If a us
 Cybersecurity and algorithm-building features, when present, are training tools for supervised learning. They must not be used for attack, theft, fraud, bypass, abuse, surveillance misuse, or criminal automation.
 ## Development Stability Gate
 This repository is tagged `pre-alpha` and `in-development`. External PRs are not evaluated for merge before the official school tool is stable and fully functional for classroom use. Until that gate is met, outside contributors should open issues or build local forks/plugins; maintainers may still push internal stabilization commits.
+## School Authentication And Secret Boundary
+This repository is a small SecuredMe school tool. Official classroom use must not require `.env` files, API keys, raw tokens, or local model secrets. Student and teacher workflows must use Codex/OpenAI or Antigravity/Gemini through browser WebAuth, fingerprinted session approval, and encrypted local session records when authentication is needed.
 
+The reason for excluding generic local AI routes from official school mode is student and teacher safety: education accounts, provider-side account controls, browser login, and governed AI refusal behavior are safer than unguided local model endpoints for classroom cybersecurity and algorithm-building tools.
 

@@ -1,5 +1,10 @@
 # fnpqnn_gateway_MVP
 
+## School Authentication And Secret Boundary
+This repository is a small SecuredMe school tool. Official classroom use must not require `.env` files, API keys, raw tokens, or local model secrets. Student and teacher workflows must use Codex/OpenAI or Antigravity/Gemini through browser WebAuth, fingerprinted session approval, and encrypted local session records when authentication is needed.
+
+The reason for excluding generic local AI routes from official school mode is student and teacher safety: education accounts, provider-side account controls, browser login, and governed AI refusal behavior are safer than unguided local model endpoints for classroom cybersecurity and algorithm-building tools.
+
 > **Development status.** This school tool is currently tagged **pre-alpha / in development**. External PRs are not evaluated for merge until the maintained tool reaches a stable, fully functional 100% classroom release after the pre-alpha phase. Issues and forks remain allowed, but official PR review is paused until that stability gate is met.
 
 
@@ -250,5 +255,6 @@ contract and the exact next commands for:
 The simulator-side encryption and LVFM conversion lives in the main
 `FNP-QNN-MVP` repo under `core/cloud_rag_bridge.py` and CLI commands
 `fnp-qnn cloud-kit rag-*`.
+
 
 
