@@ -1,0 +1,26 @@
+Disclaimer For SEL/SECL-Covered Projects
+
+SEL/SECL-covered material is provided for education, research, classroom
+training, review support, simulation, defensive cybersecurity education,
+fraud-awareness, abuse-prevention, and supervised learning.
+
+The material is provided without warranty and without any promise of accuracy,
+safety, legality, compliance, fitness for production, or fitness for
+safety-critical decisions.
+
+Jean-Sebastien Beaulieu, SecuredMe, contributors, reviewers, schools, OpenAI,
+Codex, Google, Gemini, Antigravity, and related providers are not responsible
+for misuse, unsafe modifications, broken private forks, illegal deployments,
+harmful workflows, privacy violations, security incidents, or autonomous
+decisions made with SEL/SECL-covered material.
+
+Users and deployers remain responsible for:
+
+- reviewing the code and documentation before use;
+- complying with applicable law and school policy;
+- protecting credentials, personal data, and private sources;
+- preventing attack, theft, fraud, bypass, unsafe surveillance, and criminal
+  automation;
+- obtaining qualified legal, safety, scientific, or security review when needed.
+
+This disclaimer is not legal advice.

@@ -4,6 +4,8 @@ Standalone gateway CLI for the FNP-QNN simulator MVP.
 
 > **Official school governance.** The maintained classroom gateway supports Codex/OpenAI and Antigravity/Gemini as the only official AI-assisted school routes. Ollama Cloud is not an official school provider. See [SCHOOL_TOOL_GOVERNANCE.md](SCHOOL_TOOL_GOVERNANCE.md) and [AGENTS.md](AGENTS.md).
 
+> **Notice and disclaimer.** The existing project license remains active. See [NOTICE](NOTICE) and [DISCLAIMER](DISCLAIMER) for attribution, school-governance, and misuse-responsibility boundaries.
+
 The package provides one `fnpqnn` command surface for:
 
 - launching the branded simulator TUI through `fnpqnn --tui` when the simulator package is installed;

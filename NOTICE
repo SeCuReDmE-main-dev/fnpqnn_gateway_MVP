@@ -1,0 +1,19 @@
+Secured Educational License 2.0 Notice
+
+Primary author and maintainer:
+
+Jean-Sebastien Beaulieu
+ORCID: https://orcid.org/0009-0007-2904-0443
+SecuredMe
+
+This project defines the SEL-2.0 and SECL-2.0 license texts and companion
+policy documents for educational software, classroom tooling, research
+scaffolds, simulation tools, supervised student/teacher learning environments,
+and defensive educational cybersecurity tools.
+
+SEL-2.0 uses the custom SPDX-compatible identifier:
+
+- LicenseRef-SEL-2.0
+- LicenseRef-SECL-2.0
+
+These identifiers are not currently part of the official SPDX License List.
