@@ -49,8 +49,6 @@ fnpqnn gateway start
 | `codex` | `openai` | `codex` | Codex stays native; gateway exposes simulator context |
 | `gemini` | `google` | `gemini` | Gemini/Antigravity stays native; gateway exposes simulator context |
 | `antigravity` | `google` | `antigravity` | Antigravity stays native; gateway exposes simulator context |
-| `ollama` | `ollama` | `ollama` | local Ollama stays native; gateway exposes simulator context |
-| `ollama-cloud` | `ollama` | `ollama-cloud` | Ollama/OpenClaw stays native; gateway exposes simulator context |
 | `github-copilot` | `github-copilot` | `simulator` | Copilot stays in the IDE; simulator hook remains local |
 | `agent-platform` | none | `agent-platform` | external platform stays native |
 | `openclaw` | none | `openclaw` | OpenClaw stays native; gateway exposes simulator context |
@@ -66,7 +64,6 @@ fnpqnn gateway start
 | `codex` | `codex` | Runs Codex/OpenAI preflight, then starts simulator API |
 | `antigravity` | `antigravity` | Runs Google/Antigravity preflight, then starts simulator API |
 | `vscode` | `github-copilot` + CodeProject.AI tunnel metadata | Keeps Copilot support-only and validates the approved CodeProject.AI Server URL |
-| `ollama-cloud` | `ollama-cloud` | Runs Ollama support preflight, then starts simulator API |
 | `openclaw` | `openclaw` | Runs OpenClaw/MCP preflight, then starts simulator API |
 | `cloud-kit` | `openclaw` | Checks E2B/CloudKit readiness, then starts simulator API |
 | `docker-kit` | `simulator` | Runs `docker compose up --build simulator-api simulator-panel` |
@@ -144,14 +141,14 @@ For simulator research validation, create a provider-routed web-search
 contract from an authlog:
 
 ```powershell
-fnpqnn gateway deepsearch-skill --query "validate this research" --system ollama-cloud --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --system antigravity --dry-run
 fnpqnn gateway deepsearch-skill --query "validate this research" --last-auth --write
 fnpqnn function deepsearch --query "validate this research" --system docker --dry-run
 ```
 
-The contract routes Ollama Cloud and Google/Antigravity to their native
-web-search surface. If the accepted authlog belongs to a system without a
-declared native search route, the gateway falls back to
+The contract routes Codex/OpenAI and Google/Antigravity to their native
+web-search surface. If the accepted authlog belongs to a system without an
+official school search route, the gateway falls back to
 `antigravity-gemini-google-search`. Written contracts live under
 `.fnpqnn_gateway/deepsearch`; raw provider secrets, cookies, API keys, and
 dotenv material are never written.

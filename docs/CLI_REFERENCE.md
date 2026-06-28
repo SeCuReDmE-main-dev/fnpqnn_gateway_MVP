@@ -12,7 +12,6 @@ fnpqnn gateway bootstrap --profile natural --fingerprint fp-natural --accept-fin
 fnpqnn gateway bootstrap --profile codex --fingerprint fp-codex --accept-fingerprint
 fnpqnn gateway bootstrap --profile antigravity --fingerprint fp-antigravity --accept-fingerprint
 fnpqnn gateway bootstrap --profile vscode --fingerprint fp-vscode --accept-fingerprint --codeproject-url http://localhost:32168
-fnpqnn gateway bootstrap --profile ollama-cloud --fingerprint fp-ollama --accept-fingerprint
 fnpqnn gateway bootstrap --profile openclaw --fingerprint fp-openclaw --accept-fingerprint
 fnpqnn gateway bootstrap --profile cloud-kit --fingerprint fp-cloud --accept-fingerprint --env-file "C:\Users\jeans\.openclaw\workspace\.env"
 fnpqnn gateway bootstrap --profile docker-kit --fingerprint fp-docker --accept-fingerprint
@@ -27,7 +26,7 @@ fnpqnn gateway skill-entry --name test-skill --goal "Create a test skill contrac
 fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
 fnpqnn gateway skill-create --name test-skill --goal "Create a test skill contract" --last --output-path .\skills --write
 fnpqnn function skill-creator --name test-skill --goal "Create a test skill contract" --profile codex --dry-run
-fnpqnn gateway deepsearch-skill --query "validate this research" --system ollama-cloud --dry-run
+fnpqnn gateway deepsearch-skill --query "validate this research" --system antigravity --dry-run
 fnpqnn gateway deepsearch-skill --query "validate this research" --last-auth --write
 fnpqnn function deepsearch --query "validate this research" --system docker --dry-run
 fnpqnn gateway activate --tool codex --fingerprint fp-123 --accept-fingerprint --dry-run
@@ -40,7 +39,6 @@ fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --simulator-url http://lo
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codex --dry-run
 fnpqnn gateway run --hook gemini --dry-run
-fnpqnn gateway run --hook ollama-cloud --dry-run
 fnpqnn gateway run --hook agent-platform --dry-run
 fnpqnn gateway run --hook codeproject-ai --codeproject-url http://localhost:32168
 fnpqnn gateway run --hook codeproject-ai-mesh --codeproject-url http://localhost:32168 --known-server ai-node-01
@@ -68,7 +66,7 @@ the gateway does not echo raw simulator payloads.
 Bootstrap profiles persist the last accepted route in `.fnpqnn_gateway/bootstrap.json`.
 `gateway start` reuses that state and streams the selected server in the
 foreground. Supported bootstrap profiles are `natural`, `codex`,
-`antigravity`, `vscode`, `ollama-cloud`, `openclaw`, `cloud-kit`, and
+`antigravity`, `vscode`, `openclaw`, `cloud-kit`, and
 `docker-kit`.
 
 `gateway skill-entry` creates `.fnpqnn_gateway/skill_entries/<name>.json`,
@@ -85,8 +83,8 @@ provider-specific assets unless `--write --create-files` is explicitly used.
 
 `gateway deepsearch-skill` creates a native web-search/deepsearch contract for
 the simulator from `--system <auth-system>` or the latest accepted authlog via
-`--last-auth`. Ollama Cloud and Google/Antigravity use provider-native web
-search. Systems without a declared native search route fall back to
+`--last-auth`. Codex/OpenAI and Google/Antigravity use provider-native web
+search. Systems without an official school search route fall back to
 `antigravity-gemini-google-search`. The function alias is
 `fnpqnn function deepsearch`. `--write` creates
 `.fnpqnn_gateway/deepsearch/<query>.json` and `.md`; no `.env`, token, cookie,
@@ -126,7 +124,7 @@ fnpqnn function auth-login --system cloud-kit --dry-run
 fnpqnn auth provider-routes
 fnpqnn auth model-switch --tool codex --fingerprint fp-123 --dry-run
 fnpqnn auth model-switch --last --dry-run
-fnpqnn function provider-switch --tool ollama-cloud --fingerprint fp-ollama --dry-run
+fnpqnn function provider-switch --tool antigravity --fingerprint fp-google --dry-run
 fnpqnn auth fingerprint accept --tool codex --fingerprint fp-123 --dry-run
 fnpqnn auth fingerprint accept --tool gemini --fingerprint fp-123 --write
 fnpqnn support provider github-copilot
@@ -138,7 +136,7 @@ Natural auth diagnostics report existing tool readiness. They never persist raw 
 Fingerprint acceptance maps the approved login identity to the correct onboarding voice and runtime gate. The selected agent then continues in its native tool with simulator capabilities exposed by the gateway.
 
 `auth login` creates a web-auth hook wrapper per system. Supported systems
-include `natural`, `codex`, `antigravity`, `vscode`, `ollama-cloud`,
+include `natural`, `codex`, `antigravity`, `vscode`,
 `openclaw`, `cloud-kit`, `docker-kit`, `codeproject-ai`, plus direct account
 surfaces `e2b`, `datadog`, `google`, `github`, and `docker`. `--open-browser`
 opens the system login URL. Validation checks that the hook uses HTTPS where a

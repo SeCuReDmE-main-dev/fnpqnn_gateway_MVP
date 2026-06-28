@@ -6,8 +6,10 @@ The support layer separates account/provider readiness from runtime hooks.
 
 - `openai`: ChatGPT/Codex natural login or environment readiness.
 - `google`: Gemini/Google AI account readiness.
-- `ollama`: local/cloud Ollama readiness.
 - `github-copilot`: VS Code Copilot, Copilot CLI, or GitHub CLI readiness.
+
+Ollama Cloud and local uncensored model routes are not official school providers.
+They must not be reintroduced as classroom support routes.
 
 ## Runtime Hooks
 

@@ -7,7 +7,6 @@ Runtime hooks are declared in `fnpqnn_gateway_mvp/hooks.py`.
 - `simulator`: starts or diagnoses the base FNP-QNN simulator without AI account coupling.
 - `codex`: checks OpenAI/Codex support and emits the Codex wake prompt path before simulator launch.
 - `gemini`: checks Google/Gemini support and emits the Gemini wake prompt path before simulator launch.
-- `ollama-cloud`: checks Ollama support and emits the Ollama wake prompt path before simulator launch.
 - `openclaw`: checks OpenClaw/MCP surfaces before simulator launch.
 - `agent-platform`: checks external agent platform surfaces such as OpenClaw/MCP manifests.
 - `codeproject-ai`: observes or calls one CodeProject.AI Server HTTP backend.
@@ -24,8 +23,6 @@ Hooks are selected by `fnpqnn gateway activate` after a fingerprint is accepted:
 - `codex` opens the `codex` hook and writes Codex-oriented onboarding.
 - `gemini` opens the `gemini` hook and writes Gemini/Antigravity-oriented onboarding.
 - `antigravity` opens the `antigravity` hook and writes IDE-native Antigravity onboarding.
-- `ollama` opens the `ollama` hook and writes local Ollama onboarding.
-- `ollama-cloud` opens the `ollama-cloud` hook and writes Ollama/OpenClaw-oriented onboarding.
 - `github-copilot` keeps the runtime hook on `simulator` and writes IDE-oriented onboarding.
 - `openclaw` opens the `openclaw` hook and writes OpenClaw-native onboarding.
 - `codeproject-ai` and `codeproject-ai-mesh` write backend/tunnel/mesh onboarding.
@@ -44,7 +41,6 @@ Bootstrap profile mapping:
 - `codex` -> `codex`
 - `antigravity` -> `antigravity`
 - `vscode` -> Copilot support-only plus CodeProject.AI Server tunnel metadata
-- `ollama-cloud` -> `ollama-cloud`
 - `openclaw` -> `openclaw`
 - `cloud-kit` -> OpenClaw route plus E2B/CloudKit preflight
 - `docker-kit` -> Docker Compose simulator API and Panel

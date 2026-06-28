@@ -34,4 +34,4 @@ level, route action, simulator status, gateway mode, and E2B enabled state.
 
 ## External Agent Boundary
 
-Codex, Gemini, Ollama Cloud, OpenClaw, MCP agents, CodeProject.AI Server, and CodeProject.AI mesh are support surfaces around the simulator. They should be replaceable without changing simulator internals.
+Codex/OpenAI and Antigravity/Gemini are the official AI-assisted school support surfaces around the simulator. OpenClaw, MCP agents, CodeProject.AI Server, and CodeProject.AI mesh remain infrastructure or backend-adjacent surfaces where configured, but they do not expand the official classroom provider list. Ollama Cloud and local uncensored model routes are not official school providers.
