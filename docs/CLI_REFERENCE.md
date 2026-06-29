@@ -13,7 +13,7 @@ fnpqnn gateway bootstrap --profile codex --fingerprint fp-codex --accept-fingerp
 fnpqnn gateway bootstrap --profile antigravity --fingerprint fp-antigravity --accept-fingerprint
 fnpqnn gateway bootstrap --profile vscode --fingerprint fp-vscode --accept-fingerprint --codeproject-url http://localhost:32168
 fnpqnn gateway bootstrap --profile openclaw --fingerprint fp-openclaw --accept-fingerprint
-fnpqnn gateway bootstrap --profile cloud-kit --fingerprint fp-cloud --accept-fingerprint --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn gateway bootstrap --profile cloud-kit --fingerprint fp-cloud --accept-fingerprint --env-file ".env"
 fnpqnn gateway bootstrap --profile docker-kit --fingerprint fp-docker --accept-fingerprint
 fnpqnn gateway start --dry-run
 fnpqnn gateway run --profile natural --dry-run
@@ -169,7 +169,7 @@ The Obsidian bridge is a Markdown plus JSONL persistent RAG surface. It receives
 
 ```powershell
 fnpqnn cloud e2b-status
-fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-smoke --env-file ".env"
 fnpqnn cloud e2b-ingest-plan --tool codex --source https://example.com/data.csv --title "External data" --dry-run
 fnpqnn cloud e2b-ingest-plan --tool openclaw --source https://example.com/data.csv --title "External data" --write
 ```

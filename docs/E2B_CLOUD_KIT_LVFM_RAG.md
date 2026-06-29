@@ -26,7 +26,7 @@ approved external data source
 ## Real Smoke
 
 ```powershell
-fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-smoke --env-file ".env"
 ```
 
 The smoke loads `E2B_API_KEY` into the current process without printing it. If

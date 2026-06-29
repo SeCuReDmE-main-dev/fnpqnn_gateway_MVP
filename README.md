@@ -106,7 +106,7 @@ fnpqnn memory p114-consensus --item "verified evidence passed" --item "partial r
 fnpqnn memory obsidian-query --query "yolo cerebrum"
 fnpqnn memory obsidian-lvfm-stream --query "yolo cerebrum"
 fnpqnn cloud e2b-status
-fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-smoke --env-file ".env"
 fnpqnn cloud e2b-ingest-plan --tool codex --source https://example.com/data.csv --title "External data" --dry-run
 ```
 
@@ -266,7 +266,7 @@ Commands:
 
 ```powershell
 fnpqnn cloud e2b-status
-fnpqnn cloud e2b-smoke --env-file "C:\Users\jeans\.openclaw\workspace\.env"
+fnpqnn cloud e2b-smoke --env-file ".env"
 fnpqnn cloud e2b-ingest-plan --tool codex --source https://example.com/data.csv --title "External data" --dry-run
 ```
 
