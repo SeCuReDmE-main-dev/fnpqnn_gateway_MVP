@@ -18,3 +18,13 @@ This repository is a small SecuredMe school tool. Official classroom use must no
 
 The reason for excluding generic local AI routes from official school mode is student and teacher safety: education accounts, provider-side account controls, browser login, and governed AI refusal behavior are safer than unguided local model endpoints for classroom cybersecurity and algorithm-building tools.
 
+## Token Governor Standard
+
+SecuredMe Education apps should pass Codex/OpenAI and Antigravity/Gemini only
+the minimum model-visible context needed for the learning task. Large simulator
+state, long math traces, raw logs, and UI hydration data should become local
+artifact pointers or component metadata. Student and teacher flows should use
+the classroom token policy by default; operator diagnostics may use the operator
+policy while remaining credential-blind. Public status remains `pre-alpha`
+until each app validates its own token-governed payloads.
+

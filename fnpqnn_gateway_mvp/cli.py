@@ -28,6 +28,8 @@ from .qlc_submit import qlc_submit
 from .runner import run_bootstrap_plan, run_hook
 from .skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from .support import support_all, support_provider
+from .token_budget import default_policy, list_activity_profiles, list_user_profiles
+from .token_governor import implementation_report, token_governor_check, token_governor_compress, token_governor_plan
 from .tunnel import tunnel_status
 from .web_auth_login import auth_login, list_auth_login_systems
 
@@ -63,6 +65,19 @@ def _print(payload: dict[str, Any], as_json: bool) -> int:
     else:
         print(json.dumps(payload, indent=2, sort_keys=True))
     return 0 if payload.get("success", True) else 1
+
+
+def _load_cli_payload(payload: str | None, payload_file: str | None) -> Any:
+    if payload_file:
+        text = Path(payload_file).read_text(encoding="utf-8")
+    elif payload is not None:
+        text = payload
+    else:
+        return {}
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return text
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -243,6 +258,44 @@ def build_parser() -> argparse.ArgumentParser:
     model_switch.add_argument("--dry-run", action="store_true")
     model_switch.add_argument("--write", action="store_true")
     model_switch.add_argument("--force", action="store_true")
+
+    token_governor = sub.add_parser("token-governor", help="Plan, check, and compress model-visible context budgets.")
+    tg_sub = token_governor.add_subparsers(dest="token_governor_command", required=True)
+    tg_plan = tg_sub.add_parser("plan", help="Build a token-governed handoff envelope.")
+    tg_plan.add_argument("--route", required=True, choices=["codex", "antigravity", "gemini", "simulator"])
+    tg_plan.add_argument("--activity", choices=list(list_activity_profiles()))
+    tg_plan.add_argument("--user-profile", choices=list(list_user_profiles()))
+    tg_plan.add_argument("--preset", choices=["classroom", "operator"], default="classroom")
+    tg_plan.add_argument("--payload")
+    tg_plan.add_argument("--payload-file")
+    tg_plan.add_argument("--workspace", default=".")
+    tg_plan.add_argument("--dry-run", action="store_true")
+    tg_plan.add_argument("--write", action="store_true")
+    tg_plan.add_argument("--force", action="store_true")
+    tg_check = tg_sub.add_parser("check", help="Validate a payload against token and secret-safety rules.")
+    tg_check.add_argument("--route", required=True, choices=["codex", "antigravity", "gemini", "simulator"])
+    tg_check.add_argument("--activity", choices=list(list_activity_profiles()))
+    tg_check.add_argument("--user-profile", choices=list(list_user_profiles()))
+    tg_check.add_argument("--preset", choices=["classroom", "operator"], default="classroom")
+    tg_check.add_argument("--payload")
+    tg_check.add_argument("--payload-file")
+    tg_check.add_argument("--workspace", default=".")
+    tg_check.add_argument("--emit-metrics", action="store_true")
+    tg_compress = tg_sub.add_parser("compress", help="Compact context history into a token-governed snapshot.")
+    tg_compress.add_argument("--route", required=True, choices=["codex", "antigravity", "gemini", "simulator"])
+    tg_compress.add_argument("--activity", choices=list(list_activity_profiles()))
+    tg_compress.add_argument("--user-profile", choices=list(list_user_profiles()))
+    tg_compress.add_argument("--preset", choices=["classroom", "operator"], default="classroom")
+    tg_compress.add_argument("--payload")
+    tg_compress.add_argument("--payload-file")
+    tg_compress.add_argument("--workspace", default=".")
+    tg_compress.add_argument("--dry-run", action="store_true")
+    tg_compress.add_argument("--write", action="store_true")
+    tg_sub.add_parser("profiles", help="List token governor activity and user profiles.")
+    tg_policy = tg_sub.add_parser("policy", help="Show the built-in token governor policy.")
+    tg_policy.add_argument("--preset", choices=["classroom", "operator"], default="classroom")
+    tg_report = tg_sub.add_parser("report", help="Show the local implementation report path/status.")
+    tg_report.add_argument("--workspace", default=".")
 
     function = sub.add_parser("function", help="Function-style gateway operations for companion CLIs.")
     function_sub = function.add_subparsers(dest="function_command", required=True)
@@ -585,6 +638,60 @@ def run_args(args: argparse.Namespace) -> int:
                 ),
                 as_json,
             )
+    if args.section == "token-governor":
+        if args.token_governor_command == "plan":
+            return _print(
+                token_governor_plan(
+                    route=args.route,
+                    payload=_load_cli_payload(args.payload, args.payload_file),
+                    workspace=args.workspace,
+                    activity=args.activity,
+                    user_profile=args.user_profile,
+                    preset=args.preset,
+                    write=args.write and not args.dry_run,
+                    force=args.force,
+                ),
+                as_json,
+            )
+        if args.token_governor_command == "check":
+            return _print(
+                token_governor_check(
+                    _load_cli_payload(args.payload, args.payload_file),
+                    route=args.route,
+                    workspace=args.workspace,
+                    activity=args.activity,
+                    user_profile=args.user_profile,
+                    preset=args.preset,
+                    emit_metrics=args.emit_metrics,
+                ),
+                as_json,
+            )
+        if args.token_governor_command == "compress":
+            return _print(
+                token_governor_compress(
+                    _load_cli_payload(args.payload, args.payload_file),
+                    route=args.route,
+                    workspace=args.workspace,
+                    activity=args.activity,
+                    user_profile=args.user_profile,
+                    preset=args.preset,
+                    write=args.write and not args.dry_run,
+                ),
+                as_json,
+            )
+        if args.token_governor_command == "profiles":
+            return _print(
+                {
+                    "success": True,
+                    "activity_profiles": list_activity_profiles(),
+                    "user_profiles": list_user_profiles(),
+                },
+                as_json,
+            )
+        if args.token_governor_command == "policy":
+            return _print({"success": True, "policy": default_policy(args.preset)}, as_json)
+        if args.token_governor_command == "report":
+            return _print(implementation_report(args.workspace), as_json)
     if args.section == "function":
         if args.function_command == "provider-switch":
             return _print(

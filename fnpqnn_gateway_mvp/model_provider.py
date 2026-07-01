@@ -16,6 +16,7 @@ from typing import Any
 from .activation import route_for_tool
 from .bootstrap import load_bootstrap_state
 from .natural_auth import copilot_status, provider_status
+from .token_governor import token_governor_plan
 
 
 MODEL_PROVIDER_STATE_PATH = ".fnpqnn_gateway/model_provider.json"
@@ -189,7 +190,7 @@ def build_model_provider_switch(
     selected_source, source_reasons = _select_source(provider_route, auth_status, source)
     ws = _workspace_path(workspace)
     state_path = model_provider_state_path(ws)
-    return {
+    payload = {
         "success": True,
         "created_at": _now(),
         "workspace": str(ws),
@@ -229,6 +230,21 @@ def build_model_provider_switch(
         "raw_token_stored": False,
         "mutates_provider_config": False,
     }
+    governor_route = route.tool if route.tool in {"codex", "antigravity", "gemini", "simulator"} else "simulator"
+    payload["token_governor"] = token_governor_plan(
+        route=governor_route,
+        payload={
+            "tool": route.tool,
+            "runtime_hook": route.runtime_hook,
+            "provider": provider_route.as_dict(),
+            "selected_auth_source": selected_source,
+            "managed_env_policy": payload["managed_env_policy"],
+        },
+        workspace=workspace,
+        activity="short_question",
+        user_profile="teacher",
+    )
+    return payload
 
 
 def write_model_provider_switch(plan: dict[str, Any], *, force: bool = False) -> dict[str, Any]:

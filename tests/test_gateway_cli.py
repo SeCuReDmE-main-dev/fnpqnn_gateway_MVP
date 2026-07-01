@@ -25,6 +25,9 @@ from fnpqnn_gateway_mvp.qlc_submit import build_gateway_loop_receipt, extract_ga
 from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
 from fnpqnn_gateway_mvp.telemetry import _sanitize as sanitize_metric_token
+from fnpqnn_gateway_mvp.token_budget import default_policy, resolve_budget
+from fnpqnn_gateway_mvp.token_estimator import estimate_gemini_tokens, estimate_openai_tokens
+from fnpqnn_gateway_mvp.token_governor import token_governor_check, token_governor_compress, token_governor_plan
 from fnpqnn_gateway_mvp.tunnel import tunnel_status
 from fnpqnn_gateway_mvp.web_auth_login import auth_login, list_auth_login_systems
 
@@ -734,6 +737,8 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(payload["tool"], "codex")
         self.assertTrue(payload["dry_run"])
+        self.assertIn("token_governor", payload)
+        self.assertEqual(payload["token_governor"]["route"], "codex")
 
     def test_skill_entry_builds_entry_exit_contract(self) -> None:
         payload = build_skill_entry(
@@ -863,6 +868,7 @@ class GatewayCliTests(unittest.TestCase):
         self.assertFalse(payload["search_route"]["fallback_used"])
         self.assertTrue(payload["policy"]["no_generic_scraper_first"])
         self.assertFalse(payload["raw_secret_stored"])
+        self.assertEqual(payload["token_governor"]["activity"], "research")
 
     def test_deepsearch_non_search_provider_falls_back_to_antigravity(self) -> None:
         payload = build_deepsearch_skill(query="datadog account research", system="datadog")
@@ -938,6 +944,7 @@ class GatewayCliTests(unittest.TestCase):
         payload = json.loads(output)
         self.assertEqual(payload["runtime_hook"], "simulator")
         self.assertIn("Copilot", " ".join(payload["native_tool_owns"]))
+        self.assertIn("token_governor", payload)
 
     def test_requested_surfaces_have_activation_and_capability_routes(self) -> None:
         expected = {
@@ -1123,6 +1130,111 @@ class GatewayCliTests(unittest.TestCase):
         self.assertTrue(payload["success"], payload)
         self.assertTrue(payload["stdout_contains_expected_marker"])
         self.assertFalse(payload["raw_token_stored"])
+
+    def test_token_estimator_openai_and_gemini_return_counts(self) -> None:
+        payload = {"text": "Bonjour math dF i_fractal", "values": [1, 2, 3]}
+        openai = estimate_openai_tokens(payload)
+        gemini = estimate_gemini_tokens(payload)
+
+        self.assertEqual(openai["schema"], "securedme.token_governor.usage_estimate.v1")
+        self.assertGreater(openai["estimated_tokens"], 0)
+        self.assertEqual(gemini["provider"], "gemini")
+        self.assertGreater(gemini["estimated_tokens"], 0)
+
+    def test_token_governor_budget_presets_scale_by_user_profile(self) -> None:
+        classroom = default_policy("classroom")
+        minor = resolve_budget(route="codex", activity="simulation", user_profile="student_minor", policy=classroom)
+        operator = resolve_budget(route="codex", activity="simulation", user_profile="operator", policy=default_policy("operator"))
+
+        self.assertLess(minor["max_input_tokens"], operator["max_input_tokens"])
+        self.assertFalse(minor["operator_diagnostics_allowed"])
+        self.assertTrue(operator["operator_diagnostics_allowed"])
+
+    def test_token_governor_plan_preserves_neutrosophic_fields(self) -> None:
+        payload = {"mission": "simulation", "T": 0.9, "I": 0.1, "F": 0.2, "dF": 0.3, "i_fractal": "keep"}
+        plan = token_governor_plan(route="codex", payload=payload, activity="simulation", user_profile="teacher")
+
+        self.assertTrue(plan["success"])
+        fields = plan["envelope"]["visible"]["neutrosophic_fields"]
+        self.assertEqual(fields["dF"], 0.3)
+        self.assertEqual(fields["i_fractal"], "keep")
+        self.assertFalse(plan["raw_secret_stored"])
+
+    def test_token_governor_check_rejects_secret_payload(self) -> None:
+        payload = {"message": "api_key=secret-token-value"}
+        check = token_governor_check(payload, route="codex")
+
+        self.assertFalse(check["success"])
+        self.assertFalse(check["checks"]["secret_safe"])
+        self.assertNotIn("secret-token-value", json.dumps(check))
+
+    def test_token_governor_compress_preserves_df_and_uses_pointer(self) -> None:
+        history = [{"step": "start", "dF": 0.21}, {"step": "end", "i_fractal": "stable"}]
+        receipt = token_governor_compress(history, route="antigravity", activity="simulation", user_profile="teacher")
+
+        self.assertTrue(receipt["success"])
+        self.assertEqual(receipt["snapshot"]["neutrosophic_fields"]["dF"], 0.21)
+        self.assertEqual(receipt["snapshot"]["neutrosophic_fields"]["i_fractal"], "stable")
+        self.assertFalse(receipt["artifact_pointer"]["raw_content_included"])
+
+    def test_token_governor_plan_cli_codex_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "token-governor",
+            "plan",
+            "--route",
+            "codex",
+            "--payload",
+            '{"goal":"short question with dF"}',
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["schema"], "securedme.token_governor.plan.v1")
+        self.assertEqual(payload["route"], "codex")
+        self.assertTrue(payload["dry_run"])
+
+    def test_token_governor_check_cli_antigravity(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "token-governor",
+            "check",
+            "--route",
+            "antigravity",
+            "--payload",
+            '{"goal":"teacher review"}',
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["schema"], "securedme.token_governor.check.v1")
+        self.assertTrue(payload["checks"]["secret_safe"])
+
+    def test_token_governor_compress_cli_dry_run(self) -> None:
+        code, output = self.capture([
+            "--json",
+            "token-governor",
+            "compress",
+            "--route",
+            "codex",
+            "--activity",
+            "simulation",
+            "--payload",
+            '[{"dF":0.2},{"i_fractal":"keep"}]',
+            "--dry-run",
+        ])
+        self.assertEqual(code, 0)
+        payload = json.loads(output)
+        self.assertEqual(payload["schema"], "securedme.token_governor.compression_receipt.v1")
+        self.assertTrue(payload["dry_run"])
+
+    def test_auth_login_and_provider_switch_include_token_governor(self) -> None:
+        login = auth_login("codex", fingerprint="fp-codex", accept_fingerprint=True)
+        switch = build_model_provider_switch(tool="antigravity", fingerprint="fp-google", workspace=".")
+
+        self.assertIn("token_governor", login)
+        self.assertEqual(login["token_governor"]["route"], "codex")
+        self.assertIn("token_governor", switch)
+        self.assertEqual(switch["token_governor"]["route"], "antigravity")
 
 
 if __name__ == "__main__":

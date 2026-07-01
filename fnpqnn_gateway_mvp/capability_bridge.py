@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .activation import route_for_tool
+from .token_governor import token_governor_plan
 
 
 SIMULATOR_CAPABILITIES = (
@@ -87,6 +88,19 @@ def _slug(value: str) -> str:
 def capability_map(tool: str, workspace: str | Path = ".") -> dict[str, Any]:
     route = route_for_tool(tool)
     ws = Path(workspace).expanduser().resolve()
+    governor_route = route.tool if route.tool in {"codex", "antigravity", "gemini", "simulator"} else "simulator"
+    governor = token_governor_plan(
+        route=governor_route,
+        payload={
+            "tool": route.tool,
+            "runtime_hook": route.runtime_hook,
+            "native_surface": route.native_surface,
+            "simulator_capabilities": SIMULATOR_CAPABILITIES,
+        },
+        workspace=ws,
+        activity="short_question",
+        user_profile="teacher",
+    )
     return {
         "success": True,
         "tool": route.tool,
@@ -102,6 +116,7 @@ def capability_map(tool: str, workspace: str | Path = ".") -> dict[str, Any]:
             "onboarding files",
             "hook command plans",
             "skill request handoff files",
+            "token governor budgets, compression receipts, and artifact pointers",
         ],
         "non_absorption_rules": [
             "The simulator does not become the provider tool.",
@@ -112,10 +127,18 @@ def capability_map(tool: str, workspace: str | Path = ".") -> dict[str, Any]:
         "paths": {
             "activation": str(ws / ".fnpqnn_gateway" / "activation.json"),
             "skill_requests": str(ws / ".fnpqnn_gateway" / "skill_requests"),
+            "token_governor": str(ws / ".fnpqnn_gateway" / "token_governor"),
             "agents": str(ws / "AGENTS.md"),
             "soul": str(ws / "SOUL.md"),
             "user": str(ws / "USER.md"),
             "memory": str(ws / "MEMORY.md"),
+        },
+        "token_governor": {
+            "route": governor["route"],
+            "activity": governor["activity"],
+            "budget": governor["budget"],
+            "metrics": governor["metrics"],
+            "quality_score": governor["envelope"]["quality_score"],
         },
     }
 
@@ -164,6 +187,13 @@ def skill_request(
         "paths": {"json": str(json_path), "markdown": str(md_path)},
         "dry_run": not write,
     }
+    payload["token_governor"] = token_governor_plan(
+        route=route.tool if route.tool in {"codex", "antigravity", "gemini", "simulator"} else "simulator",
+        payload={"name": name, "goal": goal, "tool": route.tool},
+        workspace=ws,
+        activity=None,
+        user_profile="teacher",
+    )
     markdown = (
         f"# Native Skill Request: {name}\n\n"
         f"- tool: {route.tool}\n"

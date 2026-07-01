@@ -1,0 +1,21 @@
+{
+  "default_activity": "debug",
+  "default_route": "codex",
+  "default_user_profile": "operator",
+  "official_school_routes": [
+    "codex",
+    "antigravity",
+    "gemini"
+  ],
+  "preset": "operator",
+  "rules": [
+    "operator diagnostics may use larger budgets but remain credential-blind",
+    "stable system context must precede variable session data",
+    "large app state must become artifact pointers or component metadata",
+    "visible tool output must be summary plus ids plus next actions",
+    "long math simulations must become verified snapshots",
+    "preserve I -> I_system^S -> D_f -> dF -> i_fractal",
+    "never serialize provider secrets, cookies, browser sessions, or dotenv values"
+  ],
+  "schema": "securedme.token_governor.policy.v1"
+}

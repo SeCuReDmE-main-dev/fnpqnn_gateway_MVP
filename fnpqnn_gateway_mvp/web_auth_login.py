@@ -14,6 +14,7 @@ from typing import Any
 import webbrowser
 
 from .model_provider import model_provider_switch
+from .token_governor import token_governor_plan
 
 
 AUTH_LOGIN_DIR = ".fnpqnn_gateway/auth_logins"
@@ -302,6 +303,24 @@ def build_auth_login_plan(
         "paths": {"auth_login": str(auth_login_path(ws, selected.system))},
     }
     plan["validation"] = validate_auth_login_plan(plan)
+    if selected.tool in {"codex", "antigravity", "gemini", "simulator"}:
+        governor_route = selected.tool
+    elif selected.system == "google":
+        governor_route = "antigravity"
+    else:
+        governor_route = "simulator"
+    plan["token_governor"] = token_governor_plan(
+        route=governor_route,
+        payload={
+            "system": selected.as_dict(),
+            "status": status,
+            "auth_flow": plan["auth_flow"],
+            "policy": plan["policy"],
+        },
+        workspace=workspace,
+        activity="short_question",
+        user_profile="teacher",
+    )
     plan["dry_run"] = True
     return plan
 

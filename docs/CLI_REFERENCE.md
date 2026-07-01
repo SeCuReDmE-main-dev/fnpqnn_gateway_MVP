@@ -151,6 +151,24 @@ and does not read dotenv files for provider switching. Any managed environment
 state is considered gateway-owned and may be produced only after a successful
 web-auth fingerprint.
 
+## Token Governor
+
+```powershell
+fnpqnn token-governor profiles
+fnpqnn token-governor policy --preset classroom
+fnpqnn token-governor plan --route codex --payload '{"goal":"short question"}' --dry-run
+fnpqnn token-governor check --route antigravity --payload '{"goal":"teacher review"}'
+fnpqnn token-governor compress --route codex --activity simulation --payload-file .\history.json --dry-run
+fnpqnn token-governor report
+```
+
+The Token Governor builds compact, secret-safe handoff envelopes for Codex/OpenAI,
+Antigravity/Gemini, and local simulator routes. It estimates input tokens,
+limits model-visible tool output, keeps large state behind artifact pointers,
+and preserves `I -> I_system^S -> D_f -> dF -> i_fractal` in math/simulator
+summaries. `--write` creates local `.fnpqnn_gateway/token_governor` artifacts;
+`--dry-run` leaves only the returned JSON plan.
+
 ## Memory / Obsidian
 
 ```powershell

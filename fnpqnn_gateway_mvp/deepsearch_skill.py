@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .skill_creator import normalize_skill_name
+from .token_governor import token_governor_plan
 from .web_auth_login import AUTH_LOGIN_DIR, AUTH_LOGIN_SYSTEMS, auth_login, auth_login_path
 
 
@@ -271,6 +272,18 @@ def build_deepsearch_skill(
     }
     payload["simulator_skill"]["skill_md_template"] = _skill_md_template(payload)
     payload["markdown_preview"] = _markdown_contract(payload)
+    payload["token_governor"] = token_governor_plan(
+        route=route["runtime_hook"] if route["runtime_hook"] in {"codex", "antigravity", "gemini", "simulator"} else "antigravity",
+        payload={
+            "query": query,
+            "research_goal": payload["research_goal"],
+            "search_route": route,
+            "policy": payload["policy"],
+        },
+        workspace=workspace,
+        activity="research",
+        user_profile="teacher",
+    )
     return payload
 
 
