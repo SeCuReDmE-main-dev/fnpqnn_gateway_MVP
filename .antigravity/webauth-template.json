@@ -1,0 +1,61 @@
+{
+  "_comment": "SecuredMe Education auth enforcer owner template.",
+  "schema": "securedme.education.webauth-template.v1",
+  "app": {
+    "slug": "gateway",
+    "name": "Gateway",
+    "path": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "canonical_domain": "gateway.securedme.ca",
+    "status": "pre-alpha"
+  },
+  "platform": "antigravity",
+  "source_template": {
+    "gateway": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "modules": [
+      "fnpqnn_gateway_mvp/web_auth_login.py",
+      "fnpqnn_gateway_mvp/model_provider.py",
+      "fnpqnn_gateway_mvp/activation.py",
+      "fnpqnn_gateway_mvp/bootstrap.py",
+      "fnpqnn_gateway_mvp/token_governor.py",
+      "fnpqnn_gateway_mvp/suite_auth.py"
+    ]
+  },
+  "auth_policy": {
+    "selected_auth_source": "web-auth",
+    "fingerprint_acceptance": {
+      "required": true
+    },
+    "fallback_order": [
+      "native-login",
+      "petit-yolo-instructions"
+    ],
+    "managed_env_after_success_fingerprint_only": true,
+    "student_api_keys_required": false,
+    "raw_secret_stored": false,
+    "forbidden_material": [
+      "oauth_token",
+      "cookie",
+      "browser_session",
+      "api_key",
+      ".env",
+      "client_secret"
+    ]
+  },
+  "handoff_policy": {
+    "visible_content": "summary_ids_next_actions_only",
+    "large_state": "artifact_pointer_or_meta",
+    "stable_context_order": [
+      "system",
+      "webauth_policy",
+      "app_profile",
+      "variable_task"
+    ],
+    "preserve_fields": [
+      "I",
+      "I_system^S",
+      "D_f",
+      "dF",
+      "i_fractal"
+    ]
+  }
+}

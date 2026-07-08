@@ -11,6 +11,7 @@ from typing import Any
 
 from . import __version__
 from .activation import activate, list_activation_routes
+from .algoquest_companion import companion_contract_plan, eleven_app_contract_check_plan, three_app_validation_fixture
 from .bootstrap import bootstrap as bootstrap_profile
 from .bootstrap import bootstrap_dry_run_plan, build_bootstrap_plan, list_bootstrap_profiles, start_bootstrap
 from .capability_bridge import capability_map, skill_request
@@ -28,6 +29,7 @@ from .qlc_submit import qlc_submit
 from .runner import run_bootstrap_plan, run_hook
 from .skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from .support import support_all, support_provider
+from .suite_auth import suite_auth_audit, suite_auth_check
 from .token_budget import default_policy, list_activity_profiles, list_user_profiles
 from .token_governor import implementation_report, token_governor_check, token_governor_compress, token_governor_plan
 from .tunnel import tunnel_status
@@ -195,6 +197,21 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_qlc.add_argument("--emit-metrics", action="store_true")
     gateway_readiness = gateway_sub.add_parser("qlc-readiness", help="Inspect QLC E2B/Datadog readiness without printing secrets.")
     gateway_readiness.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
+    suite_auth_audit_parser = gateway_sub.add_parser("suite-auth-audit", help="Audit all SecuredMe Education auth-enforcer adapters.")
+    suite_auth_audit_parser.add_argument("--root", default=".")
+    suite_auth_audit_parser.add_argument("--emit-metrics", action="store_true")
+    suite_auth_audit_parser.add_argument("--write-diagnostics", action="store_true")
+    suite_auth_check_parser = gateway_sub.add_parser("suite-auth-check", help="Audit one SecuredMe Education auth-enforcer adapter.")
+    suite_auth_check_parser.add_argument("--root", default=".")
+    suite_auth_check_parser.add_argument("--repo", required=True)
+    suite_auth_check_parser.add_argument("--platform", required=True, choices=["codex", "antigravity"])
+    suite_auth_check_parser.add_argument("--emit-metrics", action="store_true")
+    suite_auth_check_parser.add_argument("--write-diagnostics", action="store_true")
+    gateway_sub.add_parser("algoquest-contracts", help="Show the dry-run AlgoQuest/Qbit Education companion contract plan.")
+    algoquest_three_app = gateway_sub.add_parser("algoquest-three-app-test", help="Run the dry-run VAD -> AlgoQuest -> V.O.T Guardian contract fixture.")
+    algoquest_three_app.add_argument("--score", type=float, default=93)
+    algoquest_11_app = gateway_sub.add_parser("algoquest-11-app-check", help="Validate the dry-run AlgoQuest/Qbit contracts for the 11 non-hub Education apps.")
+    algoquest_11_app.add_argument("--root", default=None)
     gateway_sub.add_parser("version", help="Show gateway version.")
 
     codeproject = sub.add_parser("codeproject", help="Inspect CodeProject.AI Server endpoints, mesh, and tunnels.")
@@ -533,6 +550,32 @@ def run_args(args: argparse.Namespace) -> int:
             )
         if args.gateway_command == "qlc-readiness":
             return _print(qlc_tool_readiness(args.env_file), as_json)
+        if args.gateway_command == "suite-auth-audit":
+            return _print(
+                suite_auth_audit(
+                    root=args.root,
+                    emit_metrics=args.emit_metrics,
+                    write_diagnostics=args.write_diagnostics,
+                ),
+                as_json,
+            )
+        if args.gateway_command == "suite-auth-check":
+            return _print(
+                suite_auth_check(
+                    args.repo,
+                    args.platform,
+                    root=args.root,
+                    emit_metrics=args.emit_metrics,
+                    write_diagnostics=args.write_diagnostics,
+                ),
+                as_json,
+            )
+        if args.gateway_command == "algoquest-contracts":
+            return _print(companion_contract_plan(), as_json)
+        if args.gateway_command == "algoquest-11-app-check":
+            return _print(eleven_app_contract_check_plan(suite_root=args.root), as_json)
+        if args.gateway_command == "algoquest-three-app-test":
+            return _print(three_app_validation_fixture(score=args.score), as_json)
         if args.gateway_command == "run":
             if args.last:
                 return start_bootstrap(
@@ -803,3 +846,7 @@ def run_args(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     return run_args(parser.parse_args(argv))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

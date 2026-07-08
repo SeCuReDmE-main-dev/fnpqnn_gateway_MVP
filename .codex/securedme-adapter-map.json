@@ -1,0 +1,83 @@
+{
+  "_comment": "SecuredMe Education auth enforcer owner adapter map.",
+  "schema": "securedme.education.adapter-map.v2",
+  "app": {
+    "slug": "gateway",
+    "name": "Gateway",
+    "path": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "canonical_domain": "gateway.securedme.ca",
+    "canonical_route": "https://securedme.ca/education/apps/gateway/",
+    "status": "pre-alpha"
+  },
+  "naming": {
+    "policy": "securedme.education.name-pattern.v1",
+    "suite": "SecuredMe Education",
+    "canonical_slug": "gateway",
+    "display_name": "Gateway",
+    "repository_name": "fnpqnn_gateway_MVP",
+    "repository_full_name": "SeCuReDmE-main-dev/fnpqnn_gateway_MVP",
+    "adapter_prefix": "securedme-gateway",
+    "codex_adapter": "securedme-gateway-codex-adapter",
+    "antigravity_adapter": "securedme-gateway-antigravity-adapter",
+    "public_route": "https://securedme.ca/education/apps/gateway/",
+    "canonical_domain": "gateway.securedme.ca",
+    "legacy_or_internal_names": [
+      "FNP-QNN Gateway",
+      "fnpqnn_gateway_MVP"
+    ]
+  },
+  "platform": "codex",
+  "adapters": {
+    "codex": "securedme-gateway-codex-adapter",
+    "antigravity": "securedme-gateway-antigravity-adapter"
+  },
+  "referenced_plugins": [
+    "securedme-cpanel-operator",
+    "codex-memory-systeme",
+    "architecte-zero",
+    "securedme-education-controller"
+  ],
+  "referenced_skills": [
+    "CeLeBrUm_Strategic_Decomposition_Mastery",
+    "RagGgE_Innovation_and_Technology_Selection"
+  ],
+  "gateway": {
+    "webauth_source": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "token_governor_bridge": "FNP-QNN-MVP/fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/token_governor.py",
+    "auth_enforcer_bridge": "FNP-QNN-MVP/fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/suite_auth.py"
+  },
+  "auth_enforcer": {
+    "version": "securedme.education.auth-enforcer.v1",
+    "source_repo": "fnpqnn_gateway_MVP",
+    "owner": true,
+    "fail_policy": "deny_on_auth_contract_failure",
+    "no_secret_material": [
+      "oauth_token",
+      "cookie",
+      "browser_session",
+      "api_key",
+      ".env",
+      "client_secret"
+    ],
+    "preserve_fields": [
+      "I",
+      "I_system^S",
+      "D_f",
+      "dF",
+      "i_fractal"
+    ]
+  },
+  "telemetry": {
+    "fail_policy": "fail_open",
+    "datadog": {
+      "role": "observe_and_alert",
+      "metric_namespace": "securedme.education.auth",
+      "no_inline_blocking": true,
+      "redacted_only": true
+    }
+  },
+  "mcp": {
+    "status": "planned",
+    "live_servers_connected": []
+  }
+}

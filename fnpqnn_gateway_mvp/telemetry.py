@@ -12,6 +12,11 @@ GATEWAY_METRICS = {
     "review_required": "ffed_qlc.workflow.review_required",
     "e2b_audit_pass": "ffed_qlc.e2b.audit.pass",
     "e2b_audit_fail": "ffed_qlc.e2b.audit.fail",
+    "enforcer_check": "securedme.education.auth.enforcer_check",
+    "secret_reject": "securedme.education.auth.secret_reject",
+    "adapter_drift": "securedme.education.auth.adapter_drift",
+    "template_missing": "securedme.education.auth.template_missing",
+    "telemetry_drop": "securedme.education.auth.telemetry_drop",
 }
 
 

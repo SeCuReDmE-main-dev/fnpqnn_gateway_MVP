@@ -36,6 +36,8 @@ fnpqnn gateway doctor --hook codeproject-ai --codeproject-url http://localhost:3
 fnpqnn gateway doctor --hook codeproject-ai-mesh --known-server ai-node-01
 fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --dry-run
 fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --simulator-url http://localhost:8000
+fnpqnn gateway suite-auth-audit --root "C:\Users\jeans\Desktop\Case study\modele"
+fnpqnn gateway suite-auth-check --root "C:\Users\jeans\Desktop\Case study\modele" --repo "FNP-QNN-MVP/fnpqnn_gateway_MVP" --platform codex
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codex --dry-run
 fnpqnn gateway run --hook gemini --dry-run
@@ -62,6 +64,12 @@ Supported options:
 posts only the `mesh_payload` to `POST /cerebrum/runtime/run`. The response is
 compacted into fingerprints and a `ffed.qlc.gateway_celebrum_loop_receipt.v1`;
 the gateway does not echo raw simulator payloads.
+
+`gateway suite-auth-audit` validates all 24 `.codex` and `.antigravity`
+auth-enforcer surfaces across the 12 Education repositories.
+`gateway suite-auth-check` validates one repo/platform pair. Both commands are
+read-only by default. `--emit-metrics` uses fail-open DogStatsD telemetry, and
+`--write-diagnostics` writes only redacted local failure summaries.
 
 Bootstrap profiles persist the last accepted route in `.fnpqnn_gateway/bootstrap.json`.
 `gateway start` reuses that state and streams the selected server in the

@@ -1,0 +1,78 @@
+{
+  "schema": "securedme.education.datadog.auth-enforcer-template.v1",
+  "status": "template",
+  "service": "securedme-gateway",
+  "env": "education-mvp",
+  "metric_prefix": "securedme.education.auth",
+  "allowed_tags": [
+    "repo",
+    "platform",
+    "decision",
+    "env",
+    "route"
+  ],
+  "forbidden_tag_material": [
+    "token",
+    "cookie",
+    "session",
+    "api_key",
+    "client_secret",
+    "prompt",
+    "student_identifier",
+    "raw_user_text"
+  ],
+  "dashboard": {
+    "title": "SecuredMe Education Auth Enforcer",
+    "widgets": [
+      {
+        "title": "Audit decisions by repo/platform",
+        "query": "sum:securedme.education.auth.enforcer_check{env:education-mvp} by {repo,platform,decision}.as_count()"
+      },
+      {
+        "title": "Adapter drift",
+        "query": "sum:securedme.education.auth.adapter_drift{env:education-mvp} by {repo,platform}.as_count()"
+      },
+      {
+        "title": "Template missing",
+        "query": "sum:securedme.education.auth.template_missing{env:education-mvp} by {repo,platform}.as_count()"
+      },
+      {
+        "title": "Secret rejection",
+        "query": "sum:securedme.education.auth.secret_reject{env:education-mvp} by {repo,platform}.as_count()"
+      },
+      {
+        "title": "Telemetry drops",
+        "query": "sum:securedme.education.auth.telemetry_drop{env:education-mvp} by {route}.as_count()"
+      }
+    ]
+  },
+  "monitors": [
+    {
+      "name": "SecuredMe auth enforcer adapter drift",
+      "type": "query alert",
+      "query": "sum(last_15m):sum:securedme.education.auth.adapter_drift{env:education-mvp}.as_count() > 0",
+      "message": "Adapter drift detected. Run Gateway suite-auth-audit and inspect redacted diagnostics."
+    },
+    {
+      "name": "SecuredMe auth enforcer template missing",
+      "type": "query alert",
+      "query": "sum(last_15m):sum:securedme.education.auth.template_missing{env:education-mvp}.as_count() > 0",
+      "message": "Auth template missing on at least one suite surface."
+    },
+    {
+      "name": "SecuredMe auth enforcer secret rejected",
+      "type": "query alert",
+      "query": "sum(last_15m):sum:securedme.education.auth.secret_reject{env:education-mvp}.as_count() > 0",
+      "message": "A secret-bearing payload was rejected. Do not echo payload content."
+    },
+    {
+      "name": "SecuredMe auth enforcer telemetry drop",
+      "type": "query alert",
+      "query": "sum(last_15m):sum:securedme.education.auth.telemetry_drop{env:education-mvp}.as_count() > 0",
+      "message": "Telemetry dropped. User path remains fail-open; inspect local redacted diagnostics."
+    }
+  ],
+  "fail_policy": "fail_open",
+  "raw_secret_stored": false
+}
+

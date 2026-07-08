@@ -24,6 +24,7 @@ from fnpqnn_gateway_mvp.qlc_env import load_openclaw_tool_env, qlc_tool_readines
 from fnpqnn_gateway_mvp.qlc_submit import build_gateway_loop_receipt, extract_gateway_submission, qlc_submit
 from fnpqnn_gateway_mvp.skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from fnpqnn_gateway_mvp.support import support_all
+from fnpqnn_gateway_mvp.suite_auth import canonical_suite_inventory, suite_auth_audit, suite_auth_check
 from fnpqnn_gateway_mvp.telemetry import _sanitize as sanitize_metric_token
 from fnpqnn_gateway_mvp.token_budget import default_policy, resolve_budget
 from fnpqnn_gateway_mvp.token_estimator import estimate_gemini_tokens, estimate_openai_tokens
@@ -1162,11 +1163,21 @@ class GatewayCliTests(unittest.TestCase):
 
     def test_token_governor_check_rejects_secret_payload(self) -> None:
         payload = {"message": "api_key=secret-token-value"}
-        check = token_governor_check(payload, route="codex")
+        emitted: list[tuple[str, tuple[str, ...]]] = []
+
+        def fake_emit(event: str, tags: tuple[str, ...]) -> bool:
+            emitted.append((event, tags))
+            return True
+
+        from unittest.mock import patch
+
+        with patch("fnpqnn_gateway_mvp.token_governor.emit_gateway_submit_counter", fake_emit):
+            check = token_governor_check(payload, route="codex", emit_metrics=True)
 
         self.assertFalse(check["success"])
         self.assertFalse(check["checks"]["secret_safe"])
         self.assertNotIn("secret-token-value", json.dumps(check))
+        self.assertEqual(emitted, [])
 
     def test_token_governor_compress_preserves_df_and_uses_pointer(self) -> None:
         history = [{"step": "start", "dF": 0.21}, {"step": "end", "i_fractal": "stable"}]
@@ -1235,6 +1246,117 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(login["token_governor"]["route"], "codex")
         self.assertIn("token_governor", switch)
         self.assertEqual(switch["token_governor"]["route"], "antigravity")
+
+    def test_suite_auth_inventory_has_12_repos_and_gateway_owner(self) -> None:
+        inventory = canonical_suite_inventory()
+        repos = inventory["repositories"]
+
+        self.assertEqual(inventory["repository_count"], 12)
+        gateway = next(repo for repo in repos if repo["path"] == "FNP-QNN-MVP/fnpqnn_gateway_MVP")
+        self.assertTrue(gateway["auth_enforcer_owner"])
+        self.assertEqual(gateway["domain"], "gateway.securedme.ca")
+
+    def test_suite_auth_audit_validates_all_24_surfaces(self) -> None:
+        modele_root = Path(__file__).resolve().parents[2].parents[0]
+        audit = suite_auth_audit(root=modele_root)
+
+        self.assertTrue(audit["success"], audit)
+        self.assertEqual(audit["schema"], "securedme.education.suite-auth-audit.v1")
+        self.assertEqual(audit["repository_count"], 12)
+        self.assertEqual(audit["surface_count"], 24)
+        self.assertEqual(audit["summary"]["failed_surfaces"], 0)
+
+    def test_suite_auth_check_gateway_self_adapter(self) -> None:
+        modele_root = Path(__file__).resolve().parents[2].parents[0]
+        check = suite_auth_check("FNP-QNN-MVP/fnpqnn_gateway_MVP", "codex", root=modele_root)
+
+        self.assertTrue(check["success"], check)
+        self.assertTrue(check["expected"]["auth_enforcer_owner"])
+        self.assertEqual(check["adapter_map"]["auth_enforcer_source_repo"], "fnpqnn_gateway_MVP")
+
+    def test_suite_auth_check_detects_template_missing(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            repo_root = Path(tmp) / "Synthia" / "Synthia"
+            (repo_root / ".codex").mkdir(parents=True)
+            adapter = {
+                "schema": "securedme.education.adapter-map.v2",
+                "app": {"slug": "synthia"},
+                "platform": "codex",
+                "gateway": {"token_governor_bridge": "FNP-QNN-MVP/fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/token_governor.py"},
+                "auth_enforcer": {
+                    "version": "securedme.education.auth-enforcer.v1",
+                    "source_repo": "fnpqnn_gateway_MVP",
+                    "fail_policy": "deny_on_auth_contract_failure",
+                    "owner": False,
+                    "preserve_neutrosophic_hierarchy": ["I", "I_system^S", "D_f", "dF", "i_fractal"],
+                },
+                "telemetry": {"fail_policy": "fail_open", "datadog": {"role": "observe_and_alert"}},
+                "mcp": {"status": "planned"},
+            }
+            (repo_root / ".codex" / "securedme-adapter-map.json").write_text(json.dumps(adapter), encoding="utf-8")
+
+            check = suite_auth_check("Synthia/Synthia", "codex", root=tmp)
+
+        self.assertFalse(check["success"])
+        self.assertIn("template_missing", {error["code"] for error in check["errors"]})
+
+    def test_suite_auth_check_detects_adapter_drift(self) -> None:
+        import tempfile
+
+        template = {
+            "schema": "securedme.education.webauth-template.v1",
+            "app": {"slug": "synthia"},
+            "platform": "codex",
+            "auth_policy": {
+                "selected_auth_source": "web-auth",
+                "fingerprint_acceptance": {"required": True},
+                "managed_env_after_success_fingerprint_only": True,
+                "raw_secret_stored": False,
+                "forbidden_material": ["oauth_token", "cookie", "browser_session", "api_key", ".env", "client_secret"],
+            },
+            "handoff_policy": {"preserve_fields": ["I", "I_system^S", "D_f", "dF", "i_fractal"]},
+        }
+        adapter = {
+            "schema": "securedme.education.adapter-map.v2",
+            "app": {"slug": "synthia"},
+            "platform": "codex",
+            "gateway": {"future_token_governor_bridge": "planned"},
+            "auth_enforcer": {
+                "version": "securedme.education.auth-enforcer.v1",
+                "source_repo": "fnpqnn_gateway_MVP",
+                "fail_policy": "deny_on_auth_contract_failure",
+                "owner": False,
+                "preserve_neutrosophic_hierarchy": ["I", "I_system^S", "D_f", "dF", "i_fractal"],
+            },
+            "telemetry": {"fail_policy": "fail_open", "datadog": {"role": "observe_and_alert"}},
+            "mcp": {"status": "planned"},
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            surface = Path(tmp) / "Synthia" / "Synthia" / ".codex"
+            surface.mkdir(parents=True)
+            (surface / "webauth-template.json").write_text(json.dumps(template), encoding="utf-8")
+            (surface / "securedme-adapter-map.json").write_text(json.dumps(adapter), encoding="utf-8")
+
+            check = suite_auth_check("Synthia/Synthia", "codex", root=tmp)
+
+        self.assertFalse(check["success"])
+        codes = {error["code"] for error in check["errors"]}
+        self.assertIn("token_governor_inactive", codes)
+        self.assertIn("future_token_governor_bridge", codes)
+
+    def test_suite_auth_metrics_fail_open_when_datadog_unavailable(self) -> None:
+        from unittest.mock import patch
+
+        modele_root = Path(__file__).resolve().parents[2].parents[0]
+        with patch("fnpqnn_gateway_mvp.suite_auth.emit_gateway_submit_counter", return_value=False):
+            check = suite_auth_check("FNP-QNN-MVP/fnpqnn_gateway_MVP", "codex", root=modele_root, emit_metrics=True)
+
+        self.assertTrue(check["success"], check)
+        self.assertFalse(check["telemetry"]["sent"])
+        self.assertEqual(check["telemetry"]["fail_policy"], "fail_open")
 
 
 if __name__ == "__main__":
