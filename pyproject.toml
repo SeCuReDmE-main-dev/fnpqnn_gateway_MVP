@@ -17,11 +17,12 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
 ]
-dependencies = []
+dependencies = [
+  "cryptography>=42.0.0",
+]
 
 [project.optional-dependencies]
 cloud = [
-  "cryptography>=42.0.0",
   "e2b>=1.0.0",
   "e2b-code-interpreter>=1.0.0",
 ]
