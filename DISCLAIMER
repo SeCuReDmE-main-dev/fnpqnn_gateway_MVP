@@ -1,26 +1,11 @@
-Disclaimer For SEL/SECL-Covered Projects
+Disclaimer For FNP-QNN Gateway MVP
 
-SEL/SECL-covered material is provided for education, research, classroom
-training, review support, simulation, defensive cybersecurity education,
-fraud-awareness, abuse-prevention, and supervised learning.
+This project is provided for pre-alpha SecuredMe Education development, supervised education, research, simulation, classroom training, or public-interest review.
 
-The material is provided without warranty and without any promise of accuracy,
-safety, legality, compliance, fitness for production, or fitness for
-safety-critical decisions.
+It is not production, clinical, diagnostic, therapeutic, legal, regulatory, enforcement, emergency, financial, biometric-identification, or safety-critical software. It does not guarantee accuracy, availability, compliance, detection, prevention, protection, or suitability for any deployment.
 
-Jean-Sebastien Beaulieu, SecuredMe, contributors, reviewers, schools, OpenAI,
-Codex, Google, Gemini, Antigravity, and related providers are not responsible
-for misuse, unsafe modifications, broken private forks, illegal deployments,
-harmful workflows, privacy violations, security incidents, or autonomous
-decisions made with SEL/SECL-covered material.
+All model outputs, scores, classifications, traces, routes, plans, and diagnostics are review artifacts. Human review, consent, privacy, local law, and operational context remain mandatory before any real-world action.
 
-Users and deployers remain responsible for:
+The shared SecuredMe gateway may route configured metadata or dry-run diagnostics. Gateway compatibility does not authorize storing secrets, exposing private infrastructure, or claiming direct E2B, Datadog, cPanel, payment, or provider integration unless that behavior is implemented, configured, and separately validated.
 
-- reviewing the code and documentation before use;
-- complying with applicable law and school policy;
-- protecting credentials, personal data, and private sources;
-- preventing attack, theft, fraud, bypass, unsafe surveillance, and criminal
-  automation;
-- obtaining qualified legal, safety, scientific, or security review when needed.
-
-This disclaimer is not legal advice.
+Use of this repository is subject to its LICENSE, NOTICE, SECURITY.md, SAFETY.md, and CONTRIBUTING.md files.

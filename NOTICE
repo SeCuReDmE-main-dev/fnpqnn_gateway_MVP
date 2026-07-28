@@ -1,19 +1,14 @@
-Secured Educational License 2.0 Notice
+FNP-QNN Gateway MVP Notice
 
-Primary author and maintainer:
+Copyright (c) Jean-Sebastien Beaulieu and SecuredMe contributors.
 
-Jean-Sebastien Beaulieu
-ORCID: https://orcid.org/0009-0007-2904-0443
-SecuredMe
+This repository is part of the SecuredMe Education suite. It remains an independent Git repository with its own source history, license file, validation surface, and public issue trail.
 
-This project defines the SEL-2.0 and SECL-2.0 license texts and companion
-policy documents for educational software, classroom tooling, research
-scaffolds, simulation tools, supervised student/teacher learning environments,
-and defensive educational cybersecurity tools.
+License: MIT License with SecuredMe school-governance constraints documented in this repository
+Local metadata reference: MIT
+Operational branch: main
+Homepage: https://gateway.securedme.ca
 
-SEL-2.0 uses the custom SPDX-compatible identifier:
+The shared SecuredMe gateway may provide configured routing, audit, observability, or assistant-handoff support for the suite. This repository does not publish, store, or require gateway secrets in public documentation.
 
-- LicenseRef-SEL-2.0
-- LicenseRef-SECL-2.0
-
-These identifiers are not currently part of the official SPDX License List.
+Third-party names, providers, libraries, marks, and services remain the property of their respective owners. Their mention does not imply endorsement unless explicitly stated in an approved public agreement.
