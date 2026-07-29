@@ -137,7 +137,7 @@ def _suite_root_has_all_repos(root_path: Path) -> bool:
     return all((root_path / expected.path).exists() for expected in EDUCATION_SUITE_REPOS)
 
 
-def _allow_embedded_suite_contracts(root_path: Path) -> bool:
+def _allow_embedded_suite_contracts(root_path: Path, *, allow_embedded_contracts: bool = False) -> bool:
     """Allow deterministic suite-contract fixtures for single-repo CI checkouts.
 
     The real SecuredMe Education workspace contains all sibling repositories.
@@ -147,7 +147,7 @@ def _allow_embedded_suite_contracts(root_path: Path) -> bool:
     """
 
     repo_root = _current_repo_root()
-    return _path_is_relative_to(repo_root, root_path) and not _suite_root_has_all_repos(root_path)
+    return allow_embedded_contracts and _path_is_relative_to(repo_root, root_path) and not _suite_root_has_all_repos(root_path)
 
 
 def _embedded_template(expected: SuiteRepo) -> dict[str, Any]:
@@ -342,6 +342,7 @@ def suite_auth_check(
     write_diagnostics: bool = False,
     env: str = DEFAULT_ENV,
     route: str = DEFAULT_ROUTE,
+    allow_embedded_contracts: bool = False,
 ) -> dict[str, Any]:
     platform_key = platform.strip().lower().lstrip(".")
     if platform_key not in PLATFORMS:
@@ -365,7 +366,7 @@ def suite_auth_check(
     adapter_path = _adapter_map_path(repo_path, platform_key)
     template, template_error = _load_json(template_path)
     adapter_map, adapter_error = _load_json(adapter_path)
-    embedded_contracts = _allow_embedded_suite_contracts(root_path)
+    embedded_contracts = _allow_embedded_suite_contracts(root_path, allow_embedded_contracts=allow_embedded_contracts)
     if embedded_contracts and (not repo_path.exists() or template_error or adapter_error):
         template = template or _embedded_template(expected)
         adapter_map = adapter_map or _embedded_adapter_map(expected)
@@ -437,6 +438,7 @@ def suite_auth_audit(
     write_diagnostics: bool = False,
     env: str = DEFAULT_ENV,
     route: str = DEFAULT_ROUTE,
+    allow_embedded_contracts: bool = False,
 ) -> dict[str, Any]:
     root_path = _root(root)
     surfaces = [
@@ -448,6 +450,7 @@ def suite_auth_audit(
             write_diagnostics=write_diagnostics,
             env=env,
             route=route,
+            allow_embedded_contracts=allow_embedded_contracts,
         )
         for repo in EDUCATION_SUITE_REPOS
         for platform in PLATFORMS

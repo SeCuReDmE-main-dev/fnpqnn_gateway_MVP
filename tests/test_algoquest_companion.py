@@ -205,7 +205,7 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         self.assertIn("route_plan_dry_run", plan["required_checks_per_app"])
 
     def test_build_app_contract_check_validates_required_checks_for_one_app(self) -> None:
-        payload = build_app_contract_check("visual-algorithm")
+        payload = build_app_contract_check("visual-algorithm", allow_embedded_fixture=True)
 
         self.assertTrue(payload["success"], payload)
         self.assertEqual(set(payload["required_checks"]), set(REQUIRED_APP_CHECKS))
@@ -216,7 +216,10 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         self.assertTrue(payload["secret_rejection"]["success"])
         self.assertEqual(payload["adapter_manifest"]["schema"], "securedme.education.algoquest-qbit-app-adapter.v1")
         self.assertTrue(payload["check_results"]["qbit_badge_asset_file"])
-        self.assertTrue(payload["qbit_badge_asset_path"].endswith(".codex\\algoquest-qbit-assets\\algoquest-tiny-mark.png"))
+        self.assertEqual(
+            Path(payload["qbit_badge_asset_path"]).parts[-3:],
+            (".codex", "algoquest-qbit-assets", "algoquest-tiny-mark.png"),
+        )
         self.assertEqual(payload["install_sequence"]["install_order"], ["gateway_doctor", "algoquest_companion_offer", "selected_tool"])
 
     def test_build_app_contract_check_requires_app_side_manifest(self) -> None:
@@ -227,6 +230,13 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         codes = {error["code"] for error in payload["errors"]}
         self.assertIn("adapter_manifest_missing", codes)
         self.assertFalse(payload["check_results"]["adapter_map"])
+
+    def test_build_app_contract_check_does_not_use_embedded_fixture_by_default(self) -> None:
+        payload = build_app_contract_check("visual-algorithm")
+
+        self.assertFalse(payload["success"])
+        self.assertIn("adapter_manifest_missing", {error["code"] for error in payload["errors"]})
+        self.assertEqual(payload["adapter_manifest"], {})
 
     def test_build_app_contract_check_requires_declared_sdk_hook(self) -> None:
         with tempfile.TemporaryDirectory() as temp_root:
@@ -267,7 +277,7 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         self.assertIn("unknown_app", {error["code"] for error in payload["errors"]})
 
     def test_eleven_app_contract_check_plan_validates_each_non_hub_app(self) -> None:
-        plan = eleven_app_contract_check_plan()
+        plan = eleven_app_contract_check_plan(allow_embedded_fixture=True)
 
         self.assertTrue(plan["success"], plan)
         self.assertEqual(plan["app_count"], 11)
@@ -277,11 +287,14 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         for item in plan["apps"]:
             self.assertTrue(item["success"], item)
             self.assertTrue(all(item["check_results"].values()), item["check_results"])
-            self.assertTrue(item["qbit_badge_asset_path"].endswith(".codex\\algoquest-qbit-assets\\algoquest-tiny-mark.png"))
+            self.assertEqual(
+                Path(item["qbit_badge_asset_path"]).parts[-3:],
+                (".codex", "algoquest-qbit-assets", "algoquest-tiny-mark.png"),
+            )
             self.assertFalse(item["raw_secret_stored"])
 
     def test_companion_contract_plan_is_secret_safe_and_complete(self) -> None:
-        plan = companion_contract_plan()
+        plan = companion_contract_plan(allow_embedded_fixture=True)
 
         self.assertTrue(plan["success"], plan)
         self.assertEqual(len(plan["contracts"]), 6)
@@ -291,7 +304,7 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         self.assertIn("plan_fingerprint", plan)
 
     def test_gateway_algoquest_contracts_cli_json(self) -> None:
-        code, output = self.capture(["--json", "gateway", "algoquest-contracts"])
+        code, output = self.capture(["--json", "gateway", "algoquest-contracts", "--allow-embedded-fixtures"])
 
         self.assertEqual(code, 0)
         payload = json.loads(output)
@@ -308,7 +321,7 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         self.assertTrue(payload["success"], payload)
 
     def test_gateway_algoquest_11_app_check_cli_json(self) -> None:
-        code, output = self.capture(["--json", "gateway", "algoquest-11-app-check"])
+        code, output = self.capture(["--json", "gateway", "algoquest-11-app-check", "--allow-embedded-fixtures"])
 
         self.assertEqual(code, 0)
         payload = json.loads(output)
@@ -316,6 +329,14 @@ class AlgoQuestCompanionContractTests(unittest.TestCase):
         self.assertEqual(payload["app_count"], 11)
         self.assertEqual(payload["summary"]["passed"], 11)
         self.assertTrue(payload["success"], payload)
+
+    def test_gateway_algoquest_11_app_check_cli_fails_closed_without_fixture_flag(self) -> None:
+        code, output = self.capture(["--json", "gateway", "algoquest-11-app-check"])
+
+        self.assertEqual(code, 1)
+        payload = json.loads(output)
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["summary"]["passed"], 0)
 
     def test_direct_validators_accept_valid_payloads(self) -> None:
         install = build_gateway_install_sequence("algorithm-builder")

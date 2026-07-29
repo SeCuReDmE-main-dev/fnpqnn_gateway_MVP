@@ -1258,7 +1258,7 @@ class GatewayCliTests(unittest.TestCase):
 
     def test_suite_auth_audit_validates_all_24_surfaces(self) -> None:
         modele_root = Path(__file__).resolve().parents[2].parents[0]
-        audit = suite_auth_audit(root=modele_root)
+        audit = suite_auth_audit(root=modele_root, allow_embedded_contracts=True)
 
         self.assertTrue(audit["success"], audit)
         self.assertEqual(audit["schema"], "securedme.education.suite-auth-audit.v1")
@@ -1268,7 +1268,12 @@ class GatewayCliTests(unittest.TestCase):
 
     def test_suite_auth_check_gateway_self_adapter(self) -> None:
         modele_root = Path(__file__).resolve().parents[2].parents[0]
-        check = suite_auth_check("FNP-QNN-MVP/fnpqnn_gateway_MVP", "codex", root=modele_root)
+        check = suite_auth_check(
+            "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+            "codex",
+            root=modele_root,
+            allow_embedded_contracts=True,
+        )
 
         self.assertTrue(check["success"], check)
         self.assertTrue(check["expected"]["auth_enforcer_owner"])
@@ -1301,6 +1306,13 @@ class GatewayCliTests(unittest.TestCase):
 
         self.assertFalse(check["success"])
         self.assertIn("template_missing", {error["code"] for error in check["errors"]})
+
+    def test_suite_auth_check_does_not_use_embedded_contracts_by_default(self) -> None:
+        modele_root = Path(__file__).resolve().parents[2].parents[0]
+        check = suite_auth_check("FNP-QNN-MVP/fnpqnn_gateway_MVP", "codex", root=modele_root)
+
+        self.assertFalse(check["success"])
+        self.assertIn("repo_missing", {error["code"] for error in check["errors"]})
 
     def test_suite_auth_check_detects_adapter_drift(self) -> None:
         import tempfile
@@ -1352,7 +1364,13 @@ class GatewayCliTests(unittest.TestCase):
 
         modele_root = Path(__file__).resolve().parents[2].parents[0]
         with patch("fnpqnn_gateway_mvp.suite_auth.emit_gateway_submit_counter", return_value=False):
-            check = suite_auth_check("FNP-QNN-MVP/fnpqnn_gateway_MVP", "codex", root=modele_root, emit_metrics=True)
+            check = suite_auth_check(
+                "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+                "codex",
+                root=modele_root,
+                emit_metrics=True,
+                allow_embedded_contracts=True,
+            )
 
         self.assertTrue(check["success"], check)
         self.assertFalse(check["telemetry"]["sent"])

@@ -207,11 +207,16 @@ def build_parser() -> argparse.ArgumentParser:
     suite_auth_check_parser.add_argument("--platform", required=True, choices=["codex", "antigravity"])
     suite_auth_check_parser.add_argument("--emit-metrics", action="store_true")
     suite_auth_check_parser.add_argument("--write-diagnostics", action="store_true")
-    gateway_sub.add_parser("algoquest-contracts", help="Show the dry-run AlgoQuest/Qbit Education companion contract plan.")
+    algoquest_contracts = gateway_sub.add_parser(
+        "algoquest-contracts",
+        help="Show the dry-run AlgoQuest/Qbit Education companion contract plan.",
+    )
+    algoquest_contracts.add_argument("--allow-embedded-fixtures", action="store_true")
     algoquest_three_app = gateway_sub.add_parser("algoquest-three-app-test", help="Run the dry-run VAD -> AlgoQuest -> V.O.T Guardian contract fixture.")
     algoquest_three_app.add_argument("--score", type=float, default=93)
     algoquest_11_app = gateway_sub.add_parser("algoquest-11-app-check", help="Validate the dry-run AlgoQuest/Qbit contracts for the 11 non-hub Education apps.")
     algoquest_11_app.add_argument("--root", default=None)
+    algoquest_11_app.add_argument("--allow-embedded-fixtures", action="store_true")
     gateway_sub.add_parser("version", help="Show gateway version.")
 
     codeproject = sub.add_parser("codeproject", help="Inspect CodeProject.AI Server endpoints, mesh, and tunnels.")
@@ -571,9 +576,18 @@ def run_args(args: argparse.Namespace) -> int:
                 as_json,
             )
         if args.gateway_command == "algoquest-contracts":
-            return _print(companion_contract_plan(), as_json)
+            return _print(
+                companion_contract_plan(allow_embedded_fixture=args.allow_embedded_fixtures),
+                as_json,
+            )
         if args.gateway_command == "algoquest-11-app-check":
-            return _print(eleven_app_contract_check_plan(suite_root=args.root), as_json)
+            return _print(
+                eleven_app_contract_check_plan(
+                    suite_root=args.root,
+                    allow_embedded_fixture=args.allow_embedded_fixtures,
+                ),
+                as_json,
+            )
         if args.gateway_command == "algoquest-three-app-test":
             return _print(three_app_validation_fixture(score=args.score), as_json)
         if args.gateway_command == "run":

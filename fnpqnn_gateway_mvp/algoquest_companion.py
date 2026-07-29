@@ -177,8 +177,12 @@ def _embedded_adapter_manifest(repo: Any) -> dict[str, Any]:
     }
 
 
-def _allow_embedded_contract_fixture(manifest: Mapping[str, Any] | None, suite_root: str | Path | None) -> bool:
-    return suite_root is None and bool(manifest and manifest.get("_embedded_contract_fixture") is True)
+def _allow_embedded_contract_fixture(
+    manifest: Mapping[str, Any] | None,
+    *,
+    allow_embedded_fixture: bool = False,
+) -> bool:
+    return allow_embedded_fixture and bool(manifest and manifest.get("_embedded_contract_fixture") is True)
 
 
 def build_gateway_install_sequence(
@@ -676,13 +680,18 @@ def _secret_rejection_probe(app_slug: str) -> dict[str, Any]:
     }
 
 
-def _load_app_adapter_manifest(repo: Any, suite_root: str | Path | None = None) -> tuple[dict[str, Any] | None, Path, str]:
+def _load_app_adapter_manifest(
+    repo: Any,
+    suite_root: str | Path | None = None,
+    *,
+    allow_embedded_fixture: bool = False,
+) -> tuple[dict[str, Any] | None, Path, str]:
     root = Path(suite_root).expanduser().resolve() if suite_root else _default_suite_root()
     path = root / repo.path / APP_ADAPTER_MANIFEST_PATH
     try:
         return json.loads(path.read_text(encoding="utf-8")), path, ""
     except FileNotFoundError:
-        if suite_root is None:
+        if allow_embedded_fixture:
             return _embedded_adapter_manifest(repo), path, ""
         return None, path, "missing_manifest"
     except json.JSONDecodeError as exc:
@@ -748,6 +757,8 @@ def _validate_qbit_badge_asset_path(
     manifest: Mapping[str, Any] | None,
     repo: Any,
     suite_root: str | Path | None = None,
+    *,
+    allow_embedded_fixture: bool = False,
 ) -> tuple[Path | None, list[dict[str, str]]]:
     if manifest is None:
         return None, [_error("qbit_badge_asset_manifest_missing", "cannot validate qbit badge asset without adapter manifest")]
@@ -774,7 +785,7 @@ def _validate_qbit_badge_asset_path(
     except ValueError:
         return asset_path, [_error("qbit_badge_asset", "resolved qbit badge asset path escapes the app repository")]
     if not asset_path.exists():
-        if _allow_embedded_contract_fixture(manifest, suite_root):
+        if _allow_embedded_contract_fixture(manifest, allow_embedded_fixture=allow_embedded_fixture):
             return asset_path, []
         return asset_path, [_error("qbit_badge_asset_missing", f"{raw_asset_path} is missing")]
 
@@ -784,7 +795,13 @@ def _validate_qbit_badge_asset_path(
     return asset_path, []
 
 
-def _validate_sdk_hook_path(manifest: Mapping[str, Any] | None, repo: Any, suite_root: str | Path | None = None) -> tuple[Path | None, list[dict[str, str]]]:
+def _validate_sdk_hook_path(
+    manifest: Mapping[str, Any] | None,
+    repo: Any,
+    suite_root: str | Path | None = None,
+    *,
+    allow_embedded_fixture: bool = False,
+) -> tuple[Path | None, list[dict[str, str]]]:
     if manifest is None:
         return None, [_error("sdk_hook_manifest_missing", "cannot validate sdk hook without adapter manifest")]
 
@@ -802,7 +819,7 @@ def _validate_sdk_hook_path(manifest: Mapping[str, Any] | None, repo: Any, suite
     except ValueError:
         return hook_path, [_error("sdk_hook_path", "resolved sdk hook path escapes the app repository")]
     if not hook_path.exists():
-        if _allow_embedded_contract_fixture(manifest, suite_root):
+        if _allow_embedded_contract_fixture(manifest, allow_embedded_fixture=allow_embedded_fixture):
             return hook_path, []
         return hook_path, [_error("sdk_hook_missing", f"{raw_hook_path} is missing")]
     if manifest.get("sdk_hook_kind") not in {"python", "javascript", "typescript"}:
@@ -810,7 +827,12 @@ def _validate_sdk_hook_path(manifest: Mapping[str, Any] | None, repo: Any, suite
     return hook_path, []
 
 
-def build_app_contract_check(repo_slug: str, *, suite_root: str | Path | None = None) -> dict[str, Any]:
+def build_app_contract_check(
+    repo_slug: str,
+    *,
+    suite_root: str | Path | None = None,
+    allow_embedded_fixture: bool = False,
+) -> dict[str, Any]:
     repo = next((item for item in EDUCATION_SUITE_REPOS if item.slug == repo_slug), None)
     if repo is None:
         return {
@@ -822,12 +844,26 @@ def build_app_contract_check(repo_slug: str, *, suite_root: str | Path | None = 
             "dry_run": True,
         }
 
-    adapter_manifest, adapter_manifest_path, adapter_manifest_read_error = _load_app_adapter_manifest(repo, suite_root)
+    adapter_manifest, adapter_manifest_path, adapter_manifest_read_error = _load_app_adapter_manifest(
+        repo,
+        suite_root,
+        allow_embedded_fixture=allow_embedded_fixture,
+    )
     adapter_manifest_errors = _validate_app_adapter_manifest(adapter_manifest, repo)
     if adapter_manifest_read_error and not adapter_manifest_errors:
         adapter_manifest_errors.append(_error("adapter_manifest_read", adapter_manifest_read_error))
-    sdk_hook_path, sdk_hook_errors = _validate_sdk_hook_path(adapter_manifest, repo, suite_root)
-    qbit_badge_asset_path, qbit_badge_asset_errors = _validate_qbit_badge_asset_path(adapter_manifest, repo, suite_root)
+    sdk_hook_path, sdk_hook_errors = _validate_sdk_hook_path(
+        adapter_manifest,
+        repo,
+        suite_root,
+        allow_embedded_fixture=allow_embedded_fixture,
+    )
+    qbit_badge_asset_path, qbit_badge_asset_errors = _validate_qbit_badge_asset_path(
+        adapter_manifest,
+        repo,
+        suite_root,
+        allow_embedded_fixture=allow_embedded_fixture,
+    )
 
     install = build_gateway_install_sequence(
         repo.slug,
@@ -922,7 +958,7 @@ def build_app_contract_check(repo_slug: str, *, suite_root: str | Path | None = 
         "adapter_manifest_path": str(adapter_manifest_path),
         "adapter_manifest": adapter_manifest or {},
         "sdk_hook_path": str(sdk_hook_path) if sdk_hook_path else "",
-        "qbit_badge_asset_path": str(qbit_badge_asset_path).replace("/", "\\") if qbit_badge_asset_path else "",
+        "qbit_badge_asset_path": str(qbit_badge_asset_path) if qbit_badge_asset_path else "",
         "check_results": check_results,
         "install_sequence": install,
         "session_role": session,
@@ -940,9 +976,20 @@ def build_app_contract_check(repo_slug: str, *, suite_root: str | Path | None = 
     return payload
 
 
-def eleven_app_contract_check_plan(*, suite_root: str | Path | None = None) -> dict[str, Any]:
+def eleven_app_contract_check_plan(
+    *,
+    suite_root: str | Path | None = None,
+    allow_embedded_fixture: bool = False,
+) -> dict[str, Any]:
     apps = [repo for repo in EDUCATION_SUITE_REPOS if repo.slug != ALGOQUEST_SLUG]
-    checks = [build_app_contract_check(repo.slug, suite_root=suite_root) for repo in apps]
+    checks = [
+        build_app_contract_check(
+            repo.slug,
+            suite_root=suite_root,
+            allow_embedded_fixture=allow_embedded_fixture,
+        )
+        for repo in apps
+    ]
     failed = [check for check in checks if not check["success"]]
     payload = {
         "schema": ELEVEN_APP_CONTRACT_CHECK_SCHEMA,
@@ -965,13 +1012,13 @@ def eleven_app_contract_check_plan(*, suite_root: str | Path | None = None) -> d
     return payload
 
 
-def companion_contract_plan() -> dict[str, Any]:
+def companion_contract_plan(*, allow_embedded_fixture: bool = False) -> dict[str, Any]:
     install = build_gateway_install_sequence("algorithm-builder", algoquest_offer_status="enable_for_this_tool")
     student_session = build_session_role("student_minor")
     teacher_session = build_session_role("teacher")
     three_app = three_app_validation_fixture()
     registration = eleven_app_registration_plan()
-    eleven_app_contracts = eleven_app_contract_check_plan()
+    eleven_app_contracts = eleven_app_contract_check_plan(allow_embedded_fixture=allow_embedded_fixture)
     payload = {
         "schema": COMPANION_PLAN_SCHEMA,
         "success": all(
