@@ -1,0 +1,20 @@
+diff --git a/.github/CODE_REVIEW_AUDIT_2026-07-29.md b/.github/CODE_REVIEW_AUDIT_2026-07-29.md
+new file mode 100644
+index 0000000..f965361
+--- /dev/null
++++ b/.github/CODE_REVIEW_AUDIT_2026-07-29.md
+@@ -0,0 +1,14 @@
++# Code Review Audit Request - 2026-07-29
++
++This branch exists only to trigger external review on the current `main` state.
++
++Audit scope:
++
++- README badges, About metadata, and governance docs consistency.
++- Test-suite correctness and missing validation gates.
++- Secret-safety boundary: no `.env`, token, cookie, cPanel, payment, or provider secret exposure.
++- SecuredMe Education gateway compatibility without direct secret storage.
++- Pre-alpha wording, human-review boundary, and student/teacher safety posture.
++- Repository-specific architecture risks and stale documentation.
++
++No application behavior is intentionally changed by this audit branch.
