@@ -24,6 +24,8 @@
 > **Startup support acknowledgement.** The shared SecuredMe gateway is the suite-level integration point for optional E2B audit sandboxes and optional Datadog observability. This gateway may route configured school-tool audit and review signals through those lanes, while keeping secrets out of public docs and repository output.
 <!-- SECUREDME-STARTUP-SUPPORT:END -->
 
+> **Maintainer intake during active finishing week.** This repository is maintained directly on `main` by the SecuredMe maintainer. Public issues are open for bug reports, documentation corrections, security-safe observations, and reproducible feedback, but opening an issue does not promise a response or a delivery date. Pull requests are not accepted during the active code-finishing week; use issues only until this notice is replaced.
+
 
 
 
@@ -32,7 +34,7 @@ This repository is a small SecuredMe school tool. Official classroom use must no
 
 The reason for excluding generic local AI routes from official school mode is student and teacher safety: education accounts, provider-side account controls, browser login, and governed AI refusal behavior are safer than unguided local model endpoints for classroom cybersecurity and algorithm-building tools.
 
-> **Development status.** This school tool is currently tagged **pre-alpha / in development**. External PRs are not evaluated for merge until the maintained tool reaches a stable, fully functional 100% classroom release after the pre-alpha phase. Issues and forks remain allowed, but official PR review is paused until that stability gate is met.
+> **Development status.** This school tool is currently tagged **pre-alpha / in development**. Public issues remain open for intake, but no response or delivery date is promised. Pull requests are paused during the active code-finishing week.
 
 > **SecuredMe Education visual theme.** This shared infrastructure repository uses the Education suite visual package for consistency, without replacing the separate FNP-QNN simulator identity. See [assets/securedme/education](assets/securedme/education).
 
