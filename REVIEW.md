@@ -68,4 +68,3 @@ End every review with:
 - explicit verdict: `BLOCKED`, `CHANGES_REQUIRED`, or `VERIFIED_WITH_EVIDENCE`.
 
 Use `VERIFIED_WITH_EVIDENCE` only when all relevant tests and runtime gates have actually passed. Absence of a finding is not proof that an untested surface works.
-

@@ -21,4 +21,3 @@ The shared contract is `securedme.codeproject.mesh.v1`. Normal detection calls m
 - Datadog is optional, asynchronous, redacted, and fail-open; it is not part of this inference path.
 - Secrets are neither required nor read from `.env`.
 - CodeProject.AI 2.9.7 native mesh forwarding is validated for non-file requests. Multipart image routing from differing host ports is handled by explicit Gateway node selection; local inference remains available on every node.
-
