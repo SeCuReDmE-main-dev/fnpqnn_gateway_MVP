@@ -1,0 +1,36 @@
+name: securedme-cpai-gateway
+
+services:
+  codeproject-ai:
+    image: codeproject/ai-server@sha256:fff2c957f91bda107df803e7db34257fcf16376a7a1d7e56da4c5363648fb768
+    container_name: securedme-cpai-gateway
+    hostname: cpai-gateway
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:32173:32168/tcp"
+    volumes:
+      - cpai_config:/etc/codeproject/ai
+      - cpai_modules:/app/modules
+    networks:
+      mesh:
+        aliases:
+          - cpai-gateway
+    mem_limit: 1536m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:32168/v1/server/status/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+
+volumes:
+  cpai_config:
+    name: securedme-cpai-gateway-config
+  cpai_modules:
+    name: securedme-cpai-gateway-modules
+
+networks:
+  mesh:
+    external: true
+    name: securedme-education-cpai-mesh

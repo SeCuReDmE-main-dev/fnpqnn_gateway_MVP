@@ -1,0 +1,31 @@
+{
+  "MeshOptions": {
+    "Enable": true,
+    "EnableStatusBroadcast": true,
+    "EnableStatusMonitoring": true,
+    "AcceptForwardedRequests": true,
+    "AllowRequestForwarding": true,
+    "KnownMeshHostnames": [
+      "cpai-algoquest",
+      "cpai-algorithm-builder",
+      "cpai-ffed-qlc",
+      "cpai-fnp-qnn",
+      "cpai-market-guardian",
+      "cpai-quanthor",
+      "cpai-scholarium",
+      "cpai-synthia",
+      "cpai-tesla-workbench",
+      "cpai-vot-guardian",
+      "cpai-visual-algorithm-designer"
+    ],
+    "MeshServerPingTimeout": "00:00:05",
+    "ServiceName": "SecuredMe-Education-CPAI-Mesh",
+    "Port": 32168,
+    "HeartbeatInterval": "00:00:05",
+    "ServerPingInterval": "00:00:15",
+    "PingErrorRecoveryTimeout": "00:00:30",
+    "HeartbeatInactiveTimeout": "00:00:15",
+    "UpdateTimingMetricsInterval": "00:00:10",
+    "RouteInactivityTimeout": "00:01:00"
+  }
+}

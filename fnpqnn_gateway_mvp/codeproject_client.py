@@ -16,6 +16,7 @@ from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
 DEFAULT_TIMEOUT = 4.0
+MAX_RESPONSE_BYTES = 4 * 1024 * 1024
 KNOWN_PROBE_ROUTES = (
     "/",
     "/v1/vision/detect/scene",
@@ -81,6 +82,7 @@ def request(
     timeout: float = DEFAULT_TIMEOUT,
     payload: dict[str, object] | bytes | None = None,
     files: dict[str, str | Path] | None = None,
+    extra_headers: dict[str, str] | None = None,
 ) -> dict[str, object]:
     """Perform a generic CodeProject.AI HTTP request.
 
@@ -92,6 +94,8 @@ def request(
     base = normalize_url(url) + "/"
     target = urljoin(base, route.lstrip("/"))
     headers = {"User-Agent": "fnpqnn-gateway-mvp/0.1"}
+    if extra_headers:
+        headers.update(extra_headers)
     data: bytes | None = None
     if files:
         fields = payload if isinstance(payload, dict) else None
@@ -109,7 +113,15 @@ def request(
     req = Request(target, data=data, method=method, headers=headers)
     try:
         with urlopen(req, timeout=timeout) as response:
-            body = response.read(4096)
+            body = response.read(MAX_RESPONSE_BYTES + 1)
+            if len(body) > MAX_RESPONSE_BYTES:
+                return {
+                    "success": False,
+                    "url": target,
+                    "status": response.status,
+                    "error": "ResponseTooLarge: response exceeded the bounded gateway limit",
+                    "body_preview": "",
+                }
             text = body.decode("utf-8", errors="replace")
             parsed: object | None = None
             if text.strip().startswith(("{", "[")):

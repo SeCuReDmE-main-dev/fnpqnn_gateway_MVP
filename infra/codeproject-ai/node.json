@@ -1,0 +1,14 @@
+{
+  "schema": "securedme.codeproject.mesh-node.v1",
+  "node_id": "cpai-gateway",
+  "app_id": "gateway",
+  "repository": "fnpqnn_gateway_MVP",
+  "host_port": 32173,
+  "container_port": 32168,
+  "network": "securedme-education-cpai-mesh",
+  "image": "codeproject/ai-server:2.9.7",
+  "image_digest": "sha256:fff2c957f91bda107df803e7db34257fcf16376a7a1d7e56da4c5363648fb768",
+  "capabilities": ["health", "mesh_status", "object_detection", "yolo"],
+  "telemetry": {"datadog": "async_fail_open", "payload_content": false},
+  "privacy": {"store_images": false, "log_detections": false, "allow_secrets": false}
+}

@@ -30,6 +30,7 @@ cloud = [
 [project.scripts]
 fnpqnn = "fnpqnn_gateway_mvp.cli:main"
 fnpqnn-gateway = "fnpqnn_gateway_mvp.cli:main"
+fnpqnn-gateway-mcp = "fnpqnn_gateway_mvp.mcp_server:main"
 
 [tool.setuptools.packages.find]
 include = ["fnpqnn_gateway_mvp*"]

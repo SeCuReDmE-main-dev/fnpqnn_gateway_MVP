@@ -1,5 +1,14 @@
 # fnpqnn_gateway_MVP
 
+<!-- SECUREDME-CPAI-MESH:START -->
+<p align="center">
+  <img alt="CodeProject.AI Server embedded mesh node" src="https://img.shields.io/badge/CodeProject.AI%20Server-Embedded%20Mesh%20Node-1F6FEB?style=for-the-badge" />
+  <img alt="YOLO real local inference validated" src="https://img.shields.io/badge/YOLO-Real%20Local%20Inference-16A34A?style=for-the-badge" />
+</p>
+<!-- SECUREDME-CPAI-MESH:END -->
+
+[Embedded CodeProject.AI node operations](infra/codeproject-ai/README.md)
+
 [![SecuredMe Education Suite public calendar](https://img.shields.io/badge/SecuredMe%20Education%20Suite-public%20calendar%20%7C%20alpha%20Aug%203%202026-5484ED?style=for-the-badge&logo=googlecalendar&logoColor=white)](https://calendrier.securedme.ca)
 
 **Attribution:** Jean-Sebastien Beaulieu · [ORCID 0009-0007-2904-0443](https://orcid.org/0009-0007-2904-0443) · [SecuredMe](https://securedme.ca) · [FNP-QNN Gateway](https://gateway.securedme.ca)
