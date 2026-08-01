@@ -1,0 +1,37 @@
+schema: securedme.tool-doc.v2
+slug: fnpqnn-gateway
+title: FNP-QNN Gateway
+version: 0.1.0
+status: local-api
+license: LicenseRef-SEL-2.0
+summary: The shared CLI, MCP, and service boundary for controlled FNP-QNN access.
+identity:
+  logo: docs/public/assets/fnp-qnn-gateway-logo.png
+  family: FNP-QNN
+runtime:
+  type: api
+  availability: pending
+  public_url: https://gateway.securedme.ca
+source:
+  repository: https://github.com/SeCuReDmE-main-dev/fnpqnn_gateway_MVP
+  issues: https://github.com/SeCuReDmE-main-dev/fnpqnn_gateway_MVP/issues
+documentation:
+  public_root: docs/public
+  source_language: en
+  languages:
+  - en
+  - fr
+  - es
+commands:
+  install:
+  - python -m venv .venv
+  - .venv\Scripts\python -m pip install -e .
+  start:
+  - .venv\Scripts\fnpqnn-gateway --help
+  - .venv\Scripts\fnpqnn-gateway-mcp
+  test:
+  - .venv\Scripts\python -m pytest
+boundaries:
+  authority: The gateway transports and validates requests; it does not convert model
+    output into scientific authority.
+  human_review_required: true
