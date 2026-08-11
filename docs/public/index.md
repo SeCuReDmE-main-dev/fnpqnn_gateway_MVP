@@ -5,7 +5,7 @@
   <div><strong>FNP-QNN Gateway</strong><span>local-api · api · version 0.1.0</span></div>
 </div>
 
-The shared CLI, MCP, and service boundary for controlled FNP-QNN access.
+The shared CLI, MCP, service, and no-secret authentication-policy boundary for the twelve SecuredMe Education adapters.
 
 ## Public status
 

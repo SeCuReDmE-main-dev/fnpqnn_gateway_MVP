@@ -41,9 +41,13 @@
 ## School Authentication And Secret Boundary
 This repository is a small SecuredMe school tool. Official classroom use must not require `.env` files, API keys, raw tokens, or local model secrets. Student and teacher workflows must use Codex/OpenAI or Antigravity/Gemini through browser WebAuth, fingerprinted session approval, and encrypted local session records when authentication is needed.
 
+The Gateway is the **contract and enforcement owner** for that suite-wide policy. Its CLI can audit the twelve adapter templates, reject forbidden secret material, record fingerprint acceptance, and expose controlled CLI/MCP hooks. This is not a hosted single-sign-on service and does not prove that each product has a deployed login screen. Each application must still complete and test its own provider callback, account binding, session lifecycle, logout, recovery, and accessibility flow before claiming live authentication.
+
 The reason for excluding generic local AI routes from official school mode is student and teacher safety: education accounts, provider-side account controls, browser login, and governed AI refusal behavior are safer than unguided local model endpoints for classroom cybersecurity and algorithm-building tools.
 
 > **Development status.** This school tool is currently **pre-alpha — active public development**. Public issues remain open for intake, but no response or delivery date is promised. Pull requests are paused during active development.
+
+See [SecuredMe Education Auth Enforcer](docs/SECUREDME_EDUCATION_AUTH_ENFORCER.md) for the shared contract and the distinction between adapter readiness and deployed authentication.
 
 > **SecuredMe Education visual theme.** This shared infrastructure repository uses the Education suite visual package for consistency, without replacing the separate FNP-QNN simulator identity. See [assets/securedme/education](assets/securedme/education).
 

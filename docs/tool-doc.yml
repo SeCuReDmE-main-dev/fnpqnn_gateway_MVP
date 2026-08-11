@@ -4,7 +4,7 @@ title: FNP-QNN Gateway
 version: 0.1.0
 status: local-api
 license: LicenseRef-SEL-2.0
-summary: The shared CLI, MCP, and service boundary for controlled FNP-QNN access.
+summary: The shared CLI, MCP, service, and no-secret authentication-policy boundary for the twelve SecuredMe Education adapters.
 identity:
   logo: docs/public/assets/fnp-qnn-gateway-logo.png
   family: FNP-QNN
@@ -33,5 +33,5 @@ commands:
   - .venv\Scripts\python -m pytest
 boundaries:
   authority: The gateway transports and validates requests; it does not convert model
-    output into scientific authority.
+    output into scientific authority or make an application login production-ready.
   human_review_required: true

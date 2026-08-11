@@ -8,6 +8,8 @@ Keep secrets outside documentation and source control. Use `.env.example` as the
 
 Run the repository checks listed in the quickstart. A passing narrow test does not prove unrelated interfaces or scientific claims.
 
+Run the suite auth audit before presenting the adapter fleet as synchronized. A green audit means the policy files agree and forbidden material was not admitted; it is not a substitute for browser login testing in each application.
+
 ## Troubleshooting
 
 1. Confirm the repository and branch.
