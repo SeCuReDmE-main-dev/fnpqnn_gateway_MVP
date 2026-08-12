@@ -1,0 +1,11 @@
+{
+  "schema": "securedme.auth0.synthetic-personas.v1",
+  "organization": "securedme-synthetic-school",
+  "personas": [
+    {"key": "student_minor", "email_env": "AUTH0_SYNTHETIC_STUDENT_MINOR_EMAIL", "password_env": "AUTH0_SYNTHETIC_STUDENT_MINOR_PASSWORD", "internal_role": "student_minor", "subject_ref": "stu-alex"},
+    {"key": "student_adult", "email_env": "AUTH0_SYNTHETIC_STUDENT_ADULT_EMAIL", "password_env": "AUTH0_SYNTHETIC_STUDENT_ADULT_PASSWORD", "internal_role": "student_adult", "subject_ref": "stu-jordan"},
+    {"key": "teacher", "email_env": "AUTH0_SYNTHETIC_TEACHER_EMAIL", "password_env": "AUTH0_SYNTHETIC_TEACHER_PASSWORD", "internal_role": "teacher", "assigned_class_refs": ["sci10-a"]},
+    {"key": "school_admin", "email_env": "AUTH0_SYNTHETIC_SCHOOL_ADMIN_EMAIL", "password_env": "AUTH0_SYNTHETIC_SCHOOL_ADMIN_PASSWORD", "internal_role": "school_admin"},
+    {"key": "privacy_admin", "email_env": "AUTH0_SYNTHETIC_PRIVACY_ADMIN_EMAIL", "password_env": "AUTH0_SYNTHETIC_PRIVACY_ADMIN_PASSWORD", "internal_role": "privacy_admin"}
+  ]
+}

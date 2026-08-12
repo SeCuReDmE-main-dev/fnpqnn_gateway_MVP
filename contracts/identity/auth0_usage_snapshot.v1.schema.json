@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gateway.securedme.ca/contracts/auth0_usage_snapshot.v1.schema.json",
+  "title": "Auth0 Usage Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "synthetic_identity_count", "monthly_active_identity_count", "session_count", "organization_count", "events", "contains_pii", "raw_secret_stored"],
+  "properties": {
+    "schema": {"const": "auth0_usage_snapshot.v1"},
+    "synthetic_identity_count": {"type": "integer", "minimum": 0},
+    "monthly_active_identity_count": {"type": "integer", "minimum": 0},
+    "session_count": {"type": "integer", "minimum": 0},
+    "organization_count": {"type": "integer", "minimum": 0},
+    "events": {"type": "object", "additionalProperties": {"type": "integer", "minimum": 0}},
+    "contains_pii": {"const": false},
+    "raw_secret_stored": {"const": false}
+  }
+}

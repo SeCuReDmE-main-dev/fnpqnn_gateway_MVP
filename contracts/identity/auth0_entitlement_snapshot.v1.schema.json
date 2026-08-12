@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gateway.securedme.ca/contracts/auth0_entitlement_snapshot.v1.schema.json",
+  "title": "Auth0 Entitlement Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "tenant_environment", "synthetic_user_count", "organization_count", "safe_to_dry_run", "contains_pii"],
+  "properties": {
+    "schema": {"const": "auth0_entitlement_snapshot.v1"},
+    "tenant_environment": {"const": "Development"},
+    "synthetic_user_count": {"type": "integer", "minimum": 0},
+    "organization_count": {"type": "integer", "minimum": 0},
+    "safe_to_dry_run": {"type": "boolean"},
+    "contains_pii": {"const": false}
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "securedme.preproduction.auth0-pilot.v1",
+  "production_domains_modified": false,
+  "surfaces": [
+    {
+      "domain": "gateway-dev.securedme.ca",
+      "source": "fnpqnn_gateway_MVP",
+      "health_live": "/health/live",
+      "health_ready": "/health/ready"
+    },
+    {
+      "domain": "algoquest-dev.securedme.ca",
+      "source": "algoquest-ams-discovry-labs-module-/dist"
+    },
+    {
+      "domain": "synthia-dev.securedme.ca",
+      "source": "Synthia/web/professor-cockpit/dist"
+    }
+  ],
+  "required_headers": {
+    "X-Robots-Tag": "noindex, nofollow, noarchive",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
+  },
+  "requirements": [
+    "HTTPS valid on all three surfaces",
+    "exact CORS origins only",
+    "synthetic Auth0 organization only",
+    "VITE_SECUREDME_SYNTHETIC_PILOT=true only on synthia-dev",
+    "human approval before cPanel apply"
+  ],
+  "status": "planned_not_deployed"
+}

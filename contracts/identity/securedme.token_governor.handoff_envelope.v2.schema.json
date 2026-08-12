@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gateway.securedme.ca/contracts/securedme.token_governor.handoff_envelope.v2.schema.json",
+  "title": "SecuredMe Token Governor Handoff Envelope v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "handoff_id", "actor_ref", "authority_ref", "purpose", "capability_refs", "preserve_fields", "expires_at", "raw_secret_stored"],
+  "properties": {
+    "schema": {"const": "securedme.token_governor.handoff_envelope.v2"},
+    "handoff_id": {"type": "string", "pattern": "^handoff_[A-Za-z0-9_-]{12,80}$"},
+    "actor_ref": {"type": "string", "pattern": "^idref_[a-f0-9]{32}$"},
+    "authority_ref": {"type": "string", "pattern": "^authority_[A-Za-z0-9_-]{3,80}$"},
+    "purpose": {"type": "string", "minLength": 3, "maxLength": 120},
+    "capability_refs": {"type": "array", "maxItems": 24, "uniqueItems": true, "items": {"type": "string", "maxLength": 120}},
+    "preserve_fields": {"const": ["I", "I_system^S", "D_f", "dF", "i_fractal"]},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "raw_secret_stored": {"const": false}
+  }
+}

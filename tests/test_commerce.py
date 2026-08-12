@@ -15,8 +15,16 @@ from fnpqnn_gateway_mvp.commerce_server import CommerceApplication
 
 class CommerceContractsTests(unittest.TestCase):
     def setUp(self):
+        self._legacy_header_flag = os.environ.get("SECUREDME_ALLOW_LEGACY_IDENTITY_HEADER_FOR_TESTS")
+        os.environ["SECUREDME_ALLOW_LEGACY_IDENTITY_HEADER_FOR_TESTS"] = "true"
         self.store = ReceiptStore()
         self.app = CommerceApplication(self.store)
+
+    def tearDown(self):
+        if self._legacy_header_flag is None:
+            os.environ.pop("SECUREDME_ALLOW_LEGACY_IDENTITY_HEADER_FOR_TESTS", None)
+        else:
+            os.environ["SECUREDME_ALLOW_LEGACY_IDENTITY_HEADER_FOR_TESTS"] = self._legacy_header_flag
 
     def call(self, method, path, payload=None, headers=None):
         raw = json.dumps(payload or {}).encode()

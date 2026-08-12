@@ -51,13 +51,13 @@ class SuiteRepo:
 
 
 EDUCATION_SUITE_REPOS: tuple[SuiteRepo, ...] = (
-    SuiteRepo("Synthia", "Synthia", "synthia", "Synthia/Synthia", "synthia.securedme.ca"),
-    SuiteRepo("FNP-QNN-MVP", "FNP-QNN", "fnpqnn", "FNP-QNN-MVP/FNP-QNN-MVP", "fnpqnn.securedme.ca"),
+    SuiteRepo("Synthia", "Synthia", "synthia", "Synthia", "synthia.securedme.ca"),
+    SuiteRepo("FNP-QNN-MVP", "FNP-QNN", "fnpqnn", "FNP-QNN-MVP", "fnpqnn.securedme.ca"),
     SuiteRepo(
         "fnpqnn_gateway_MVP",
         "Gateway",
         "gateway",
-        "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+        "fnpqnn_gateway_MVP",
         "gateway.securedme.ca",
         role="auth_enforcer",
         auth_enforcer_owner=True,

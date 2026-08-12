@@ -1252,7 +1252,7 @@ class GatewayCliTests(unittest.TestCase):
         repos = inventory["repositories"]
 
         self.assertEqual(inventory["repository_count"], 12)
-        gateway = next(repo for repo in repos if repo["path"] == "FNP-QNN-MVP/fnpqnn_gateway_MVP")
+        gateway = next(repo for repo in repos if repo["path"] == "fnpqnn_gateway_MVP")
         self.assertTrue(gateway["auth_enforcer_owner"])
         self.assertEqual(gateway["domain"], "gateway.securedme.ca")
 
@@ -1269,7 +1269,7 @@ class GatewayCliTests(unittest.TestCase):
     def test_suite_auth_check_gateway_self_adapter(self) -> None:
         modele_root = Path(__file__).resolve().parents[2].parents[0]
         check = suite_auth_check(
-            "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+            "fnpqnn_gateway_MVP",
             "codex",
             root=modele_root,
             allow_embedded_contracts=True,
@@ -1309,7 +1309,7 @@ class GatewayCliTests(unittest.TestCase):
 
     def test_suite_auth_check_does_not_use_embedded_contracts_by_default(self) -> None:
         modele_root = Path(__file__).resolve().parents[2].parents[0]
-        check = suite_auth_check("FNP-QNN-MVP/fnpqnn_gateway_MVP", "codex", root=modele_root)
+        check = suite_auth_check("fnpqnn_gateway_MVP", "codex", root=modele_root)
 
         self.assertFalse(check["success"])
         self.assertIn("repo_missing", {error["code"] for error in check["errors"]})

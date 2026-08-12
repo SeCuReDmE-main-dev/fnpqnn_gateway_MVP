@@ -1,0 +1,15 @@
+{
+  "name": "securedme-auth0-development-tenant",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "preflight": "python scripts/preflight.py",
+    "export": "a0deploy export -c config.json --format=yaml --output_folder snapshots/latest --export_ids=true",
+    "dry-run": "a0deploy import -c config.json --input_file tenant.yaml --dry-run",
+    "import": "python scripts/import_guard.py",
+    "personas": "python scripts/provision_personas.py"
+  },
+  "devDependencies": {
+    "auth0-deploy-cli": "8.43.0"
+  }
+}

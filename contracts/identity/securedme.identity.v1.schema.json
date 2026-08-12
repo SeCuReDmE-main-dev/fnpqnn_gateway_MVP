@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gateway.securedme.ca/contracts/securedme.identity.v1.schema.json",
+  "title": "SecuredMe Identity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "securedme_id", "identity_ref", "authority_ref", "authenticated", "raw_secret_stored"],
+  "properties": {
+    "schema": {"const": "securedme.identity.v1"},
+    "securedme_id": {"type": "string", "pattern": "^sid_[A-Za-z0-9_-]{16,80}$"},
+    "identity_ref": {"type": "string", "pattern": "^idref_[a-f0-9]{32}$"},
+    "authority_ref": {"type": "string", "pattern": "^authority_[A-Za-z0-9_-]{3,80}$"},
+    "authenticated": {"const": true},
+    "raw_secret_stored": {"const": false}
+  }
+}

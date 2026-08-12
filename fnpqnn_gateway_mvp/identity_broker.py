@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 
 
 ISSUER = "https://gateway.securedme.ca"
-SUPPORTED_PROVIDERS = ("google", "github", "paypal", "chatgpt_context")
+SUPPORTED_PROVIDERS = ("auth0", "google", "github", "paypal", "chatgpt_context")
 CLIENT_DOMAINS = {
     "synthia": "synthia.securedme.ca",
     "fnpqnn": "fnpqnn.securedme.ca",

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gateway.securedme.ca/contracts/securedme.authorization_basis.v1.schema.json",
+  "title": "SecuredMe Authorization Basis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "assignment_ref", "authority_ref", "subject_ref", "assigned_class_refs", "purpose", "decision", "human_authority_required"],
+  "properties": {
+    "schema": {"const": "securedme.authorization_basis.v1"},
+    "assignment_ref": {"type": "string", "pattern": "^assignment_[A-Za-z0-9_-]{8,80}$"},
+    "authority_ref": {"type": "string", "pattern": "^authority_[A-Za-z0-9_-]{3,80}$"},
+    "subject_ref": {"type": "string", "maxLength": 100},
+    "assigned_class_refs": {"type": "array", "maxItems": 40, "uniqueItems": true, "items": {"type": "string", "maxLength": 100}},
+    "purpose": {"enum": ["learning", "teaching", "privacy_governance", "school_governance", "unassigned"]},
+    "decision": {"enum": ["allow", "deny"]},
+    "human_authority_required": {"const": true}
+  }
+}

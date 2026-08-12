@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import sqlite3
 from typing import Any, Callable
 from urllib import error, request
 from urllib.parse import urlencode, urlparse
@@ -28,6 +29,8 @@ from .commerce import (
     verify_square_signature,
 )
 from .identity_broker import IdentityBroker, generate_private_key_pem
+from .auth0_gateway import Auth0Client, Auth0Config, IdentityApplication
+from .identity_store import IdentityStore
 
 
 JsonStart = Callable[[str, list[tuple[str, str]]], None]
@@ -120,12 +123,16 @@ class PayPalAdapter:
 
 class CommerceApplication:
     def __init__(self, store: ReceiptStore, paypal: PayPalAdapter | None = None,
-                 identity: IdentityBroker | None = None) -> None:
+                 identity: IdentityBroker | None = None,
+                 identity_app: IdentityApplication | None = None) -> None:
         self.store, self.paypal = store, paypal
         self.identity = identity or IdentityBroker(store.connection)
+        self.identity_app = identity_app
 
     def __call__(self, environ: dict[str, Any], start_response: JsonStart) -> list[bytes]:
         method, path = environ.get("REQUEST_METHOD", "GET"), environ.get("PATH_INFO", "/")
+        if self.identity_app and self.identity_app.handles(path):
+            return self.identity_app(environ, start_response)
         origin = environ.get("HTTP_ORIGIN", "")
         parsed_origin = urlparse(origin)
         allowed_origin = origin if parsed_origin.scheme == "https" and (
@@ -169,7 +176,8 @@ class CommerceApplication:
                     redirect_uri=str(payload.get("redirect_uri", "")), code_verifier=str(payload.get("code_verifier", "")))
                 return _response(start_response, "200 OK", tokens)
             if method == "POST" and path == "/v1/identity-links":
-                if environ.get("HTTP_X_SECUREDME_UPSTREAM_IDENTITY_VERIFIED") != "1":
+                legacy_test_mode = os.environ.get("SECUREDME_ALLOW_LEGACY_IDENTITY_HEADER_FOR_TESTS", "").lower() == "true"
+                if not legacy_test_mode or environ.get("HTTP_X_SECUREDME_UPSTREAM_IDENTITY_VERIFIED") != "1":
                     return _response(start_response, "401 Unauthorized", {"error": "verified upstream identity required"})
                 payload = safe_json(body)
                 link = self.store.link_identity(local_subject=str(payload.get("local_subject", "")),
@@ -242,12 +250,21 @@ class CommerceApplication:
             "receipt_id": receipt.id if receipt else None})
 
     def _authorize(self, body: bytes, environ: dict[str, Any], start_response: JsonStart) -> list[bytes]:
-        if environ.get("HTTP_X_SECUREDME_UPSTREAM_IDENTITY_VERIFIED") != "1":
-            return _response(start_response, "401 Unauthorized", {"error": "verified upstream identity required"})
         payload = safe_json(body)
+        legacy_test_mode = os.environ.get("SECUREDME_ALLOW_LEGACY_IDENTITY_HEADER_FOR_TESTS", "").lower() == "true"
+        if self.identity_app:
+            try:
+                session = self.identity_app.verified_session(environ, csrf=True)
+            except ValueError:
+                return _response(start_response, "401 Unauthorized", {"error": "verified Gateway session required"})
+            local_subject, provider = session["_securedme_id"], "auth0"
+        elif legacy_test_mode and environ.get("HTTP_X_SECUREDME_UPSTREAM_IDENTITY_VERIFIED") == "1":
+            local_subject, provider = str(payload.get("local_subject", "")), str(payload.get("provider", ""))
+        else:
+            return _response(start_response, "401 Unauthorized", {"error": "verified upstream Gateway session required"})
         code = self.identity.authorize(client_id=str(payload.get("client_id", "")),
-            redirect_uri=str(payload.get("redirect_uri", "")), local_subject=str(payload.get("local_subject", "")),
-            provider=str(payload.get("provider", "")), code_challenge=str(payload.get("code_challenge", "")),
+            redirect_uri=str(payload.get("redirect_uri", "")), local_subject=local_subject,
+            provider=provider, code_challenge=str(payload.get("code_challenge", "")),
             nonce=str(payload.get("nonce", "")),
             chatgpt_context_attested=environ.get("HTTP_X_CHATGPT_CONTEXT_ATTESTED") == "1")
         query = urlencode({"code": code, "state": str(payload.get("state", ""))})
@@ -272,9 +289,14 @@ def application_from_env() -> CommerceApplication:
         subscription_plans={500: os.environ.get("PAYPAL_PLAN_5_CAD", ""),
             1000: os.environ.get("PAYPAL_PLAN_10_CAD", ""), 2500: os.environ.get("PAYPAL_PLAN_25_CAD", "")})
     store = ReceiptStore(data_path)
+    identity_path = Path(os.environ.get("SECUREDME_IDENTITY_DB", ".fnpqnn_gateway/identity.sqlite3"))
+    identity_path.parent.mkdir(parents=True, exist_ok=True)
+    identity_store = IdentityStore(sqlite3.connect(identity_path))
+    auth0_config = Auth0Config.from_env()
+    identity_app = IdentityApplication(identity_store, Auth0Client(auth0_config), auth0_config)
     key_path = os.environ.get("OIDC_SIGNING_KEY_PATH", "")
-    identity = IdentityBroker.from_pem(store.connection, Path(key_path).read_bytes()) if key_path else IdentityBroker(store.connection)
-    return CommerceApplication(store, paypal, identity)
+    identity = IdentityBroker.from_pem(identity_store.connection, Path(key_path).read_bytes()) if key_path else IdentityBroker(identity_store.connection)
+    return CommerceApplication(store, paypal, identity, identity_app)
 
 
 def main() -> None:
