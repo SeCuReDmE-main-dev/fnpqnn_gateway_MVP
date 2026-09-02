@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from . import __version__
 from .activation import activate, list_activation_routes
@@ -26,6 +27,7 @@ from .neutrosophic_gate import p114_consensus
 from .obsidian_bridge import init_obsidian, lvfm_stream, obsidian_plan, query_notes, record_note
 from .qlc_env import qlc_tool_readiness
 from .qlc_submit import qlc_submit
+from .qcg_companion_adapter import GATEWAY_STATES, QCG_VIEWS, build_qcg_companion_snapshot
 from .runner import run_bootstrap_plan, run_hook
 from .skill_creator import build_skill_creator_plan, build_skill_entry, write_skill_creator_plan, write_skill_entry
 from .support import support_all, support_provider
@@ -217,6 +219,15 @@ def build_parser() -> argparse.ArgumentParser:
     algoquest_11_app = gateway_sub.add_parser("algoquest-11-app-check", help="Validate the dry-run AlgoQuest/Qbit contracts for the 11 non-hub Education apps.")
     algoquest_11_app.add_argument("--root", default=None)
     algoquest_11_app.add_argument("--allow-embedded-fixtures", action="store_true")
+    qcg_snapshot = gateway_sub.add_parser(
+        "qcg-companion-snapshot",
+        help="Build a dry-run, secret-free QCG Companion snapshot for this gateway.",
+    )
+    qcg_snapshot.add_argument("--session-id", default=None)
+    qcg_snapshot.add_argument("--view", choices=QCG_VIEWS, default="inspector")
+    qcg_snapshot.add_argument("--state", choices=GATEWAY_STATES, default="ready")
+    qcg_snapshot.add_argument("--validated-contracts", type=int, default=0)
+    qcg_snapshot.add_argument("--evidence-exports", type=int, default=0)
     gateway_sub.add_parser("version", help="Show gateway version.")
 
     codeproject = sub.add_parser("codeproject", help="Inspect CodeProject.AI Server endpoints, mesh, and tunnels.")
@@ -590,6 +601,17 @@ def run_args(args: argparse.Namespace) -> int:
             )
         if args.gateway_command == "algoquest-three-app-test":
             return _print(three_app_validation_fixture(score=args.score), as_json)
+        if args.gateway_command == "qcg-companion-snapshot":
+            return _print(
+                build_qcg_companion_snapshot(
+                    session_id=args.session_id or str(uuid4()),
+                    view=args.view,
+                    gateway_state=args.state,
+                    validated_contracts=args.validated_contracts,
+                    evidence_exports=args.evidence_exports,
+                ),
+                as_json,
+            )
         if args.gateway_command == "run":
             if args.last:
                 return start_bootstrap(

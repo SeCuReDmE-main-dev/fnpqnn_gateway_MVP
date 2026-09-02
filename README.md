@@ -71,6 +71,7 @@ The package provides one `fnpqnn` command surface for:
 - checking natural auth readiness for OpenAI/ChatGPT, Google/Gemini, and GitHub Copilot without storing raw tokens;
 - validating CodeProject.AI Server local, mesh, or tunnel URLs as HTTP backends;
 - admitting Obsidian RAG notes with p114 neutrosophic T/I/F gate metadata;
+- producing a source-free, provider-neutral [QCG Companion snapshot proof](docs/QCG_COMPANION_GATEWAY_ADAPTER.md) without changing the WebMCP-QCG submission path;
 - keeping the simulator usable without any AI account.
 
 ## Install for local development
@@ -93,6 +94,7 @@ fnpqnn gateway bootstrap --profile openclaw --fingerprint fp-openclaw --accept-f
 fnpqnn gateway start --dry-run
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codeproject-ai --codeproject-url http://localhost:32168
+fnpqnn --json gateway qcg-companion-snapshot --view activity --validated-contracts 4
 fnpqnn gateway run --hook codeproject-ai-mesh --known-server ai-node-01 --known-server ai-node-02
 fnpqnn codeproject status --url http://localhost:32168 --dry-run
 fnpqnn codeproject mesh-status --url http://localhost:32168 --dry-run
