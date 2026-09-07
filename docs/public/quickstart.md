@@ -11,7 +11,7 @@ git status --short --branch
 Inspect the shared Education authentication policy without writing state:
 
 ```powershell
-python -m fnpqnn_gateway_mvp --json gateway suite-auth-audit --root "Z:\SecuredMe Education suite"
+python -m fnpqnn_gateway_mvp --json gateway suite-auth-audit --root "<SUITE_ROOT>"
 ```
 
 Treat the result as adapter-contract evidence only. Test live login separately in every deployed application.

@@ -36,8 +36,8 @@ fnpqnn gateway doctor --hook codeproject-ai --codeproject-url http://localhost:3
 fnpqnn gateway doctor --hook codeproject-ai-mesh --known-server ai-node-01
 fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --dry-run
 fnpqnn gateway qlc-submit --bundle .\qlc-workflow.json --simulator-url http://localhost:8000
-fnpqnn gateway suite-auth-audit --root "C:\Users\jeans\Desktop\Case study\modele"
-fnpqnn gateway suite-auth-check --root "C:\Users\jeans\Desktop\Case study\modele" --repo "FNP-QNN-MVP/fnpqnn_gateway_MVP" --platform codex
+fnpqnn gateway suite-auth-audit --root "<SUITE_ROOT>"
+fnpqnn gateway suite-auth-check --root "<SUITE_ROOT>" --repo "FNP-QNN-MVP/fnpqnn_gateway_MVP" --platform codex
 fnpqnn gateway run --hook simulator --dry-run
 fnpqnn gateway run --hook codex --dry-run
 fnpqnn gateway run --hook gemini --dry-run

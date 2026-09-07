@@ -53,13 +53,13 @@ The required adapter-map contract is `securedme.education.adapter-map.v2`.
 Run the full suite audit:
 
 ```powershell
-python -m fnpqnn_gateway_mvp --json gateway suite-auth-audit --root "C:\Users\jeans\Desktop\Case study\modele"
+python -m fnpqnn_gateway_mvp --json gateway suite-auth-audit --root "<SUITE_ROOT>"
 ```
 
 Run a single surface check:
 
 ```powershell
-python -m fnpqnn_gateway_mvp --json gateway suite-auth-check --root "C:\Users\jeans\Desktop\Case study\modele" --repo "FNP-QNN-MVP/fnpqnn_gateway_MVP" --platform codex
+python -m fnpqnn_gateway_mvp --json gateway suite-auth-check --root "<SUITE_ROOT>" --repo "FNP-QNN-MVP/fnpqnn_gateway_MVP" --platform codex
 ```
 
 Both commands are read-only by default. `--write-diagnostics` writes a redacted local JSONL failure log under `.fnpqnn_gateway/auth_enforcer/`.

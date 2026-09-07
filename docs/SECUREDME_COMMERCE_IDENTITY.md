@@ -56,8 +56,8 @@ The ES256 signing key must be generated outside the repository, restricted to th
 ## Validation
 
 ```powershell
-& "C:\Users\jeans\Desktop\Case study\modele\.venv\Scripts\python.exe" -m unittest tests.test_commerce tests.test_identity_broker -v
-& "C:\Users\jeans\Desktop\Case study\modele\.venv\Scripts\python.exe" -m fnpqnn_gateway_mvp --json gateway suite-auth-audit --root "C:\Users\jeans\Desktop\Case study\modele"
+python -m unittest tests.test_commerce tests.test_identity_broker -v
+python -m fnpqnn_gateway_mvp --json gateway suite-auth-audit --root "<SUITE_ROOT>"
 ```
 
 Tap to Pay requires a compatible Square POS phone, an Internet connection, a low-value real transaction, and a refund test before production acceptance.
