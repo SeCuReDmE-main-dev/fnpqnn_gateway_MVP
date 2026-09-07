@@ -1,0 +1,124 @@
+{
+  "tools": {
+    "gateway_inspect_session": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_inspect_allowed_tools": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_inspect_authorization_basis": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_inspect_usage": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_cpai_health": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_cpai_capabilities": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_cpai_mesh_status": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "gateway_plan_qbit_handoff": {
+      "validInput": {
+        "mission_ref": "x"
+      },
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "staged"
+    },
+    "gateway_create_opaque_pointer": {
+      "validInput": {
+        "audience": "xx",
+        "content": {}
+      },
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "staged"
+    },
+    "gateway_resolve_opaque_pointer": {
+      "validInput": {
+        "pointer": "xxxxxxxxxxxxxxxxxxxxxxxx",
+        "audience": "xx"
+      },
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "securedme_companion_context": {
+      "validInput": {},
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "completed"
+    },
+    "securedme_qbit_plan_handoff": {
+      "validInput": {
+        "mission_ref": "x"
+      },
+      "invalidInput": {
+        "__invalid": true
+      },
+      "expectedStatus": "staged"
+    }
+  },
+  "journeys": [
+    [
+      "gateway_inspect_session",
+      "gateway_inspect_allowed_tools"
+    ],
+    [
+      "gateway_inspect_authorization_basis",
+      "gateway_inspect_usage"
+    ],
+    [
+      "gateway_cpai_health",
+      "gateway_cpai_capabilities"
+    ],
+    [
+      "gateway_cpai_mesh_status",
+      "gateway_plan_qbit_handoff"
+    ],
+    [
+      "gateway_create_opaque_pointer",
+      "gateway_resolve_opaque_pointer"
+    ],
+    [
+      "securedme_companion_context",
+      "securedme_qbit_plan_handoff"
+    ]
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "securedme.gateway.opaque-pointer.v1.schema.json",
+  "type": "object",
+  "required": ["schema", "pointer", "audience", "expires_at", "raw_secret_stored"],
+  "properties": {
+    "schema": {"const": "securedme.gateway.opaque-pointer.v1"},
+    "pointer": {"type": "string", "pattern": "^ptr_[A-Za-z0-9_-]{24,}$"},
+    "audience": {"type": "string", "minLength": 2, "maxLength": 80},
+    "expires_at": {"type": "integer"},
+    "raw_secret_stored": {"const": false}
+  },
+  "additionalProperties": false
+}

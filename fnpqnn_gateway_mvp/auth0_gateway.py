@@ -16,6 +16,9 @@ from authlib.jose import JoseError, JsonWebKey, jwt
 
 from .identity_contracts import validate_contract
 from .identity_store import IdentityStore
+from .gateway_webmcp import PRODUCT_SLUG as WEBMCP_PRODUCT_SLUG
+from .gateway_webmcp import GatewayWebMCPStore, dispatch as webmcp_dispatch
+from .gateway_webmcp import manifest as webmcp_manifest, page_html as webmcp_page_html, tool as webmcp_tool
 
 
 JsonStart = Callable[[str, list[tuple[str, str]]], None]
@@ -223,10 +226,12 @@ class IdentityApplication:
         "/auth/login", "/auth/callback", "/auth/logout", "/api/v1/session",
         "/api/v1/identity-links", "/v1/identity-links", "/api/v1/auth/usage",
         "/health/live", "/health/ready",
+        "/webmcp", "/api/v1/webmcp/manifest", "/api/v1/webmcp/invoke",
     }
 
     def __init__(self, store: IdentityStore, client: Auth0Client, config: Auth0Config) -> None:
         self.store, self.client, self.config = store, client, config
+        self.webmcp_store = GatewayWebMCPStore(store.connection)
         self._login_attempts: dict[str, list[float]] = {}
 
     def handles(self, path: str) -> bool:
@@ -262,6 +267,14 @@ class IdentityApplication:
                                        "auth0_configured": self.config.configured(),
                                        "auth0_available": ready,
                                        "auth0_probe_latency_ms": round((time.perf_counter() - started) * 1000, 2)}, cors)
+            if method == "GET" and path == "/webmcp":
+                body = webmcp_page_html().encode()
+                start_response("200 OK", [("Content-Type", "text/html; charset=utf-8"), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"), ("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"), ("X-Content-Type-Options", "nosniff")])
+                return [body]
+            if method == "GET" and path == "/api/v1/webmcp/manifest":
+                return _json_response(start_response, "200 OK", webmcp_manifest(), cors)
+            if method == "POST" and path == "/api/v1/webmcp/invoke":
+                return self._webmcp_invoke(environ, start_response, cors)
             if method == "GET" and path == "/auth/login":
                 return self._login(environ, start_response)
             if method == "GET" and path == "/auth/callback":
@@ -300,6 +313,46 @@ class IdentityApplication:
         except (error.URLError, TimeoutError, KeyError, json.JSONDecodeError):
             self.store.metric("login_failure")
             return _json_response(start_response, "503 Service Unavailable", {"error": "identity_provider_unavailable"}, cors)
+
+    def _webmcp_invoke(self, environ: dict[str, Any], start_response: JsonStart, cors: list[tuple[str, str]]) -> list[bytes]:
+        session = self._require_session(environ, csrf=True)
+        if session.get("consent_scope") not in {"tool", "suite"} or WEBMCP_PRODUCT_SLUG not in session.get("allowed_tools", []):
+            return _json_response(start_response, "403 Forbidden", {"status": "error", "error_code": "FORBIDDEN", "secret_values_exposed": False}, cors)
+        try:
+            length = int(environ.get("CONTENT_LENGTH") or "0")
+        except ValueError:
+            length = 0
+        if length <= 0 or length > 1_000_000:
+            return _json_response(start_response, "400 Bad Request", {"status": "error", "error_code": "INVALID_BODY", "secret_values_exposed": False}, cors)
+        try:
+            payload = json.loads(environ["wsgi.input"].read(length))
+            name = str(payload.get("name") or "")
+            descriptor = webmcp_tool(name)
+            if descriptor is None:
+                return _json_response(start_response, "404 Not Found", {"status": "error", "error_code": "TOOL_UNAVAILABLE", "secret_values_exposed": False}, cors)
+            arguments = payload.get("arguments") or {}
+            self._validate_webmcp_arguments(descriptor, arguments)
+            result = webmcp_dispatch(name, arguments, session, self.webmcp_store, self.store)
+            return _json_response(start_response, "200 OK", {"status": "success", "tool": name, "data": result, "secret_values_exposed": False}, cors)
+        except PermissionError:
+            return _json_response(start_response, "403 Forbidden", {"status": "error", "error_code": "INSUFFICIENT_ROLE", "secret_values_exposed": False}, cors)
+        except (ValueError, TypeError, json.JSONDecodeError) as exc:
+            return _json_response(start_response, "400 Bad Request", {"status": "error", "error_code": "INVALID_ARGUMENTS", "message": str(exc)[:240], "secret_values_exposed": False}, cors)
+        except LookupError:
+            return _json_response(start_response, "503 Service Unavailable", {"status": "error", "error_code": "TOOL_UNAVAILABLE", "secret_values_exposed": False}, cors)
+
+    @staticmethod
+    def _validate_webmcp_arguments(descriptor: dict[str, Any], arguments: Any) -> None:
+        if not isinstance(arguments, dict):
+            raise ValueError("arguments must be an object")
+        schema = descriptor["inputSchema"]
+        properties = schema.get("properties", {})
+        unknown = set(arguments) - set(properties)
+        if unknown:
+            raise ValueError("unknown arguments: " + ", ".join(sorted(unknown)))
+        missing = [name for name in schema.get("required", []) if name not in arguments]
+        if missing:
+            raise ValueError("missing arguments: " + ", ".join(missing))
 
     def _login(self, environ: dict[str, Any], start_response: JsonStart) -> list[bytes]:
         self._enforce_login_rate_limit(str(environ.get("REMOTE_ADDR", "unknown")))

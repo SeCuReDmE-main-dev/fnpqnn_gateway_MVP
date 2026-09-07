@@ -1,0 +1,581 @@
+{
+  "schema": "securedme.webmcp.v1",
+  "manifestVersion": "1.0.0",
+  "product": {
+    "slug": "gateway",
+    "name": "FNP-QNN Gateway",
+    "status": "pre-alpha",
+    "canonicalStateOwner": "algoquest",
+    "applicationStateOwner": "gateway",
+    "pagePatterns": [
+      "https://gateway.securedme.ca/webmcp",
+      "http://localhost:32173/webmcp"
+    ],
+    "theme": {
+      "slug": "gateway",
+      "source": "securedme-site/theme-fallbacks/securedme-education-accessible.v1",
+      "sourceStatus": "fallback-no-product-stitch-found",
+      "tokens": {
+        "background": "#071025",
+        "surface": "#10203b",
+        "primary": "#1f7aff",
+        "secondary": "#6f42ff",
+        "accent": "#d8a548",
+        "text": "#f7fbff",
+        "muted": "#9aa8c7",
+        "focus": "#23b8ff"
+      },
+      "typography": {
+        "display": "system-ui, sans-serif",
+        "body": "system-ui, sans-serif",
+        "code": "monospace"
+      },
+      "fallback": "SecuredMe high-contrast system theme with visible focus and no image-dependent meaning."
+    }
+  },
+  "boundaries": {
+    "authority": "Gateway session, consent, allowed_tools and governance-role boundaries are authoritative for this surface.",
+    "secrets": "Provider tokens, cookies, browser sessions, .env values and provider identities are forbidden.",
+    "externalWrites": "No shell, E2B, provisioning or browser automation; pointers and approvals are one-use and expire within five minutes.",
+    "heroProgression": "AlgoQuest alone owns Hero Book progression and evidence admission."
+  },
+  "tools": [
+    {
+      "name": "gateway_inspect_session",
+      "title": "Gateway Inspect Session",
+      "description": "Inspect the current sanitized SecuredMe Education session v2.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_inspect_session"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "IdentityStore.get_session"
+      }
+    },
+    {
+      "name": "gateway_inspect_allowed_tools",
+      "title": "Gateway Inspect Allowed Tools",
+      "description": "Inspect the exact allowed_tools set for the current session.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_inspect_allowed_tools"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "session.allowed_tools"
+      }
+    },
+    {
+      "name": "gateway_inspect_authorization_basis",
+      "title": "Gateway Inspect Authorization Basis",
+      "description": "Inspect the pseudonymous authorization basis without provider identity.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_inspect_authorization_basis"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "session.authorization_basis"
+      }
+    },
+    {
+      "name": "gateway_inspect_usage",
+      "title": "Gateway Inspect Usage",
+      "description": "Inspect aggregate auth usage; governance roles only.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_inspect_usage"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "IdentityStore.usage_snapshot"
+      }
+    },
+    {
+      "name": "gateway_cpai_health",
+      "title": "Gateway Cpai Health",
+      "description": "Inspect the allowlisted CodeProject.AI Gateway health.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_cpai_health"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "gateway_health"
+      }
+    },
+    {
+      "name": "gateway_cpai_capabilities",
+      "title": "Gateway Cpai Capabilities",
+      "description": "Inspect sanitized Gateway route capabilities.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_cpai_capabilities"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "gateway_capabilities"
+      }
+    },
+    {
+      "name": "gateway_cpai_mesh_status",
+      "title": "Gateway Cpai Mesh Status",
+      "description": "Inspect sanitized mesh readiness and peer counts.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "expected_peer_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 50
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_cpai_mesh_status"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "gateway_mesh_status"
+      }
+    },
+    {
+      "name": "gateway_plan_qbit_handoff",
+      "title": "Gateway Plan Qbit Handoff",
+      "description": "Prepare a source-free Qbit handoff envelope without dispatch.",
+      "mode": "STAGE",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mission_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "artifact_refs": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 160
+            }
+          }
+        },
+        "required": [
+          "mission_ref"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_plan_qbit_handoff"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "local_proposal_only"
+      }
+    },
+    {
+      "name": "gateway_create_opaque_pointer",
+      "title": "Gateway Create Opaque Pointer",
+      "description": "Create an audience-bound, sanitized opaque pointer valid for at most five minutes.",
+      "mode": "STAGE",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "audience": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          },
+          "content": {
+            "type": "object"
+          },
+          "ttl_seconds": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 300
+          }
+        },
+        "required": [
+          "audience",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_create_opaque_pointer"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "GatewayWebMCPStore.create_pointer"
+      }
+    },
+    {
+      "name": "gateway_resolve_opaque_pointer",
+      "title": "Gateway Resolve Opaque Pointer",
+      "description": "Resolve a non-expired opaque pointer for its bound audience.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pointer": {
+            "type": "string",
+            "minLength": 24,
+            "maxLength": 256
+          },
+          "audience": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "pointer",
+          "audience"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "gateway_resolve_opaque_pointer"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "GatewayWebMCPStore.resolve_pointer"
+      }
+    },
+    {
+      "name": "securedme_companion_context",
+      "title": "Securedme Companion Context",
+      "description": "Read the sanitized Hero Book projection carried by the session.",
+      "mode": "READ",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "securedme_companion_context"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "session.hero_context_projection"
+      }
+    },
+    {
+      "name": "securedme_qbit_plan_handoff",
+      "title": "Securedme Qbit Plan Handoff",
+      "description": "Prepare the common Qbit return proposal without modifying progression.",
+      "mode": "STAGE",
+      "availability": "available",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mission_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "artifact_refs": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 160
+            }
+          }
+        },
+        "required": [
+          "mission_ref"
+        ],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "required": [
+          "status",
+          "tool",
+          "data",
+          "secret_values_exposed"
+        ],
+        "properties": {
+          "status": {
+            "const": "success"
+          },
+          "tool": {
+            "const": "securedme_qbit_plan_handoff"
+          },
+          "data": {},
+          "secret_values_exposed": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "handler": {
+        "kind": "local",
+        "operation": "local_proposal_only"
+      }
+    }
+  ]
+}
