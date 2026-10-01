@@ -7,6 +7,7 @@ import hashlib
 import json
 import secrets
 import sqlite3
+from pathlib import Path
 from typing import Any
 
 from .codeproject_contract import gateway_capabilities, gateway_health, gateway_mesh_status
@@ -57,7 +58,7 @@ def manifest() -> dict[str, Any]:
 def page_html() -> str:
     """Return the real, dependency-free Gateway discovery page."""
 
-    return """<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>SecuredMe Education Gateway WebMCP</title><style>:root{--bg:#071025;--surface:#10203b;--text:#f7fbff;--focus:#23b8ff}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,sans-serif}main{max-width:52rem;margin:auto;padding:3rem 1.25rem}.card{background:var(--surface);border:1px solid #2b4770;padding:1.25rem;border-radius:8px}a,button{color:var(--focus)}:focus-visible{outline:3px solid var(--focus);outline-offset:3px}code{font-family:monospace}</style></head><body><main><h1>Gateway WebMCP</h1><div class=\"card\"><p>Public discovery, authenticated invocation.</p><p>Session v2, exact <code>allowed_tools</code>, one-time approvals, and audience-bound pointers are enforced server-side.</p><p id=\"status\" aria-live=\"polite\">Loading twelve descriptors...</p></div></main><script>(async()=>{const m=await fetch('/api/v1/webmcp/manifest',{credentials:'same-origin'}).then(r=>r.json());document.getElementById('status').textContent=m.tools.length+' descriptors available. Authentication is required to invoke them.';const t=m.product.theme&&m.product.theme.tokens||{};for(const[k,v]of Object.entries(t))document.documentElement.style.setProperty('--securedme-'+k,v);const api=document.modelContext;if(!api||typeof api.registerTool!=='function')return;let csrf='';try{const s=await fetch('/api/v1/session',{credentials:'same-origin'}).then(r=>r.ok?r.json():{});csrf=s.csrf_token||''}catch{}for(const d of m.tools){api.registerTool({name:d.name,description:d.description,inputSchema:d.inputSchema,execute:async(a={},c={})=>{const r=await fetch('/api/v1/webmcp/invoke',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf,'X-SecuredMe-WebMCP':'1'},body:JSON.stringify({name:d.name,arguments:a,nonce:c.nonce}),signal:c.signal});const p=await r.json();if(!r.ok)throw new Error(p.error_code||p.error||'WEBMCP_REJECTED');return p}})}}})();</script></body></html>"""
+    return (Path(__file__).with_name("public") / "webmcp.html").read_text(encoding="utf-8")
 
 
 def tool(name: str) -> dict[str, Any] | None:

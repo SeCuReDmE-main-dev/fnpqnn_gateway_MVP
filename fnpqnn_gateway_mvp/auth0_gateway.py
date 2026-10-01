@@ -10,9 +10,11 @@ import json
 import os
 import time
 from typing import Any, Callable
+from pathlib import Path
 from urllib import error, parse, request
 
 from authlib.jose import JoseError, JsonWebKey, jwt
+from jsonschema import Draft202012Validator
 
 from .identity_contracts import validate_contract
 from .identity_store import IdentityStore
@@ -227,6 +229,7 @@ class IdentityApplication:
         "/api/v1/identity-links", "/v1/identity-links", "/api/v1/auth/usage",
         "/health/live", "/health/ready",
         "/webmcp", "/api/v1/webmcp/manifest", "/api/v1/webmcp/invoke",
+        "/securedme-public/securedme-html-canvas.js",
     }
 
     def __init__(self, store: IdentityStore, client: Auth0Client, config: Auth0Config) -> None:
@@ -257,6 +260,10 @@ class IdentityApplication:
                 return _json_response(start_response, "403 Forbidden", {"error": "origin_not_allowed"})
             cors = [("Access-Control-Allow-Origin", origin), ("Access-Control-Allow-Credentials", "true"), ("Vary", "Origin")]
         try:
+            if method == "GET" and path == "/securedme-public/securedme-html-canvas.js":
+                body = (Path(__file__).with_name("public") / "securedme-public" / "securedme-html-canvas.js").read_bytes()
+                start_response("200 OK", [("Content-Type", "application/javascript; charset=utf-8"), ("Content-Length", str(len(body))), ("Cache-Control", "public, max-age=300"), ("X-Content-Type-Options", "nosniff")])
+                return [body]
             if method == "GET" and path == "/health/live":
                 return _json_response(start_response, "200 OK", {"status": "live", "service": "securedme-identity"}, cors)
             if method == "GET" and path == "/health/ready":
@@ -269,7 +276,7 @@ class IdentityApplication:
                                        "auth0_probe_latency_ms": round((time.perf_counter() - started) * 1000, 2)}, cors)
             if method == "GET" and path == "/webmcp":
                 body = webmcp_page_html().encode()
-                start_response("200 OK", [("Content-Type", "text/html; charset=utf-8"), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"), ("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"), ("X-Content-Type-Options", "nosniff")])
+                start_response("200 OK", [("Content-Type", "text/html; charset=utf-8"), ("Content-Length", str(len(body))), ("Cache-Control", "no-store"), ("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"), ("X-Content-Type-Options", "nosniff")])
                 return [body]
             if method == "GET" and path == "/api/v1/webmcp/manifest":
                 return _json_response(start_response, "200 OK", webmcp_manifest(), cors)
@@ -326,11 +333,13 @@ class IdentityApplication:
             return _json_response(start_response, "400 Bad Request", {"status": "error", "error_code": "INVALID_BODY", "secret_values_exposed": False}, cors)
         try:
             payload = json.loads(environ["wsgi.input"].read(length))
+            if not isinstance(payload, dict):
+                raise ValueError("invocation must be an object")
             name = str(payload.get("name") or "")
             descriptor = webmcp_tool(name)
             if descriptor is None:
                 return _json_response(start_response, "404 Not Found", {"status": "error", "error_code": "TOOL_UNAVAILABLE", "secret_values_exposed": False}, cors)
-            arguments = payload.get("arguments") or {}
+            arguments = payload.get("arguments", {})
             self._validate_webmcp_arguments(descriptor, arguments)
             result = webmcp_dispatch(name, arguments, session, self.webmcp_store, self.store)
             return _json_response(start_response, "200 OK", {"status": "success", "tool": name, "data": result, "secret_values_exposed": False}, cors)
@@ -353,6 +362,11 @@ class IdentityApplication:
         missing = [name for name in schema.get("required", []) if name not in arguments]
         if missing:
             raise ValueError("missing arguments: " + ", ".join(missing))
+        # Use the declared schema, including nested values and numeric bounds.
+        # Validator messages can contain private input; return only the rule.
+        violation = next(Draft202012Validator(schema).iter_errors(arguments), None)
+        if violation is not None:
+            raise ValueError("invalid arguments: " + str(violation.validator))
 
     def _login(self, environ: dict[str, Any], start_response: JsonStart) -> list[bytes]:
         self._enforce_login_rate_limit(str(environ.get("REMOTE_ADDR", "unknown")))

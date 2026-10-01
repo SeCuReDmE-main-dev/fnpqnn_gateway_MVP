@@ -36,3 +36,6 @@ fnpqnn-gateway-mcp = "fnpqnn_gateway_mvp.mcp_server:main"
 
 [tool.setuptools.packages.find]
 include = ["fnpqnn_gateway_mvp*"]
+
+[tool.setuptools.package-data]
+fnpqnn_gateway_mvp = ["public/*.html", "public/securedme-public/*.js"]

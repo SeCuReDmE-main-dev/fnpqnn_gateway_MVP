@@ -75,3 +75,30 @@ def test_wsgi_page_and_manifest_are_public_but_invoke_is_not():
     assert status == "200 OK" and len(json.loads(raw)["tools"]) == 12
     status, _, raw = call("POST", "/api/v1/webmcp/invoke", json.dumps({"name": "gateway_inspect_session", "arguments": {}}).encode())
     assert status == "401 Unauthorized" and json.loads(raw)["error"] == "session_required"
+
+
+@pytest.mark.parametrize("name,arguments", [
+    ("gateway_cpai_mesh_status", {"expected_peer_count": True}),
+    ("gateway_cpai_mesh_status", {"expected_peer_count": -1}),
+    ("gateway_cpai_mesh_status", {"expected_peer_count": 51}),
+    ("gateway_create_opaque_pointer", {"audience": "a", "content": {}}),
+    ("gateway_create_opaque_pointer", {"audience": "valid", "content": []}),
+    ("gateway_plan_qbit_handoff", {"mission_ref": ""}),
+    ("gateway_plan_qbit_handoff", {"mission_ref": "valid", "artifact_refs": [1]}),
+    ("gateway_plan_qbit_handoff", {"mission_ref": "valid", "artifact_refs": ["x"] * 21}),
+])
+def test_invoke_arguments_follow_declared_schema(name, arguments):
+    from fnpqnn_gateway_mvp.auth0_gateway import IdentityApplication
+    from fnpqnn_gateway_mvp.gateway_webmcp import tool
+    with pytest.raises(ValueError, match="invalid arguments"):
+        IdentityApplication._validate_webmcp_arguments(tool(name), arguments)
+
+
+def test_valid_pointer_arguments_and_error_do_not_expose_payload():
+    from fnpqnn_gateway_mvp.auth0_gateway import IdentityApplication
+    from fnpqnn_gateway_mvp.gateway_webmcp import tool
+    descriptor = tool("gateway_create_opaque_pointer")
+    IdentityApplication._validate_webmcp_arguments(descriptor, {"audience": "valid", "content": {}, "ttl_seconds": 300})
+    with pytest.raises(ValueError) as captured:
+        IdentityApplication._validate_webmcp_arguments(descriptor, {"audience": "valid", "content": "synthetic-private-content"})
+    assert "synthetic-private-content" not in str(captured.value)

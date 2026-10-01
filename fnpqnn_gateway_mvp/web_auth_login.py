@@ -138,16 +138,6 @@ AUTH_LOGIN_SYSTEMS: dict[str, AuthLoginSystem] = {
         native_fallback="Use the E2B dashboard login; downstream CLI state must be gateway-managed after fingerprint success.",
         runtime_relation="isolated E2B compute lane for Cloud Kit",
     ),
-    "datadog": AuthLoginSystem(
-        system="datadog",
-        label="Datadog",
-        tool="openclaw",
-        provider="datadog",
-        web_auth_target="Datadog browser login",
-        web_auth_url="https://app.datadoghq.com/account/login",
-        native_fallback="Use the Datadog account login in the browser; telemetry config remains gateway-managed after fingerprint success.",
-        runtime_relation="observability account for E2B/OpenClaw audit telemetry",
-    ),
     "google": AuthLoginSystem(
         system="google",
         label="Google",

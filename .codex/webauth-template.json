@@ -4,13 +4,13 @@
   "app": {
     "slug": "gateway",
     "name": "Gateway",
-    "path": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "path": "fnpqnn_gateway_MVP",
     "canonical_domain": "gateway.securedme.ca",
     "status": "pre-alpha"
   },
   "platform": "codex",
   "source_template": {
-    "gateway": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "gateway": "fnpqnn_gateway_MVP",
     "modules": [
       "fnpqnn_gateway_mvp/web_auth_login.py",
       "fnpqnn_gateway_mvp/model_provider.py",

@@ -166,7 +166,7 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(payload["simulator_status"], "not_run")
         self.assertFalse(payload["raw_payload_echoed"])
         self.assertEqual(payload["loop_receipt"]["schema"], "ffed.qlc.gateway_celebrum_loop_receipt.v1")
-        self.assertIn("swop_level:high", payload["datadog_tags"])
+        self.assertIn("swop_level:high", payload["telemetry_tags"])
 
     def test_qlc_submit_rejects_raw_secret_or_media_fields(self) -> None:
         bundle = _qlc_workflow_bundle()
@@ -257,7 +257,7 @@ class GatewayCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             env_path = Path(tmp) / ".env"
             env_path.write_text(
-                "E2B_API_KEY=e2b-secret-value\nDATADOG_API_KEY=dd-secret-value\nDD_DOGSTATSD_HOST=127.0.0.1\nDD_DOGSTATSD_PORT=8125\n",
+                "E2B_API_KEY=e2b-secret-value\nSECUREDME_OTEL_ENABLED=true\nOTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:4318/v1/metrics\n",
                 encoding="utf-8",
             )
             payload = qlc_tool_readiness(env_path)
@@ -265,8 +265,9 @@ class GatewayCliTests(unittest.TestCase):
         self.assertTrue(payload["success"])
         self.assertEqual(payload["schema"], "ffed.qlc.tool_readiness_status.v1")
         self.assertTrue(payload["e2b_key_present"])
-        self.assertTrue(payload["datadog_key_present"])
-        self.assertTrue(payload["dogstatsd_config_present"])
+        self.assertTrue(payload["otel_enabled"])
+        self.assertTrue(payload["otel_endpoint_allowed"])
+        self.assertEqual(payload["otel_reachable"], "not_checked")
         self.assertFalse(payload["raw_values_printed"])
         self.assertNotIn("secret-value", json.dumps(payload))
 
@@ -371,7 +372,7 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         payload = json.loads(output)
         self.assertTrue(payload["dry_run"])
-        self.assertIn("e2b_enabled:true", payload["datadog_tags"])
+        self.assertIn("e2b_enabled:true", payload["telemetry_tags"])
 
     def test_unreachable_url_returns_support_action(self) -> None:
         payload = status("http://127.0.0.1:9", timeout=0.2)
@@ -615,7 +616,6 @@ class GatewayCliTests(unittest.TestCase):
             "docker-kit",
             "codeproject-ai",
             "e2b",
-            "datadog",
             "google",
             "github",
             "docker",
@@ -640,7 +640,7 @@ class GatewayCliTests(unittest.TestCase):
         systems = {item["system"]["system"] for item in payload["systems"]}
         self.assertIn("cloud-kit", systems)
         self.assertIn("docker-kit", systems)
-        self.assertIn("datadog", systems)
+        self.assertNotIn("datadog", systems)
 
     def test_auth_login_write_creates_only_gateway_login_state(self) -> None:
         import tempfile
@@ -686,7 +686,6 @@ class GatewayCliTests(unittest.TestCase):
     def test_explicit_web_auth_accounts_have_https_hooks(self) -> None:
         expected = {
             "e2b": "https://e2b.dev/dashboard",
-            "datadog": "https://app.datadoghq.com/account/login",
             "google": "https://accounts.google.com/",
             "github": "https://github.com/login",
             "docker": "https://app.docker.com/sign-in",
@@ -703,9 +702,9 @@ class GatewayCliTests(unittest.TestCase):
         from unittest.mock import patch
 
         with patch("fnpqnn_gateway_mvp.web_auth_login.webbrowser.open", return_value=True) as opened:
-            payload = auth_login("datadog", open_browser=True)
+            payload = auth_login("e2b", open_browser=True)
         self.assertTrue(payload["auth_flow"]["browser_opened"])
-        opened.assert_called_once_with("https://app.datadoghq.com/account/login")
+        opened.assert_called_once_with("https://e2b.dev/dashboard")
 
     def test_capability_map_keeps_codex_and_simulator_separate(self) -> None:
         payload = capability_map("codex", workspace=".")
@@ -872,7 +871,7 @@ class GatewayCliTests(unittest.TestCase):
         self.assertEqual(payload["token_governor"]["activity"], "research")
 
     def test_deepsearch_non_search_provider_falls_back_to_antigravity(self) -> None:
-        payload = build_deepsearch_skill(query="datadog account research", system="datadog")
+        payload = build_deepsearch_skill(query="container account research", system="docker")
         self.assertTrue(payload["success"])
         self.assertEqual(payload["search_route"]["route"], "antigravity-gemini-google-search")
         self.assertTrue(payload["search_route"]["fallback_used"])
@@ -1297,7 +1296,7 @@ class GatewayCliTests(unittest.TestCase):
                     "owner": False,
                     "preserve_neutrosophic_hierarchy": ["I", "I_system^S", "D_f", "dF", "i_fractal"],
                 },
-                "telemetry": {"fail_policy": "fail_open", "datadog": {"role": "observe_and_alert"}},
+                "telemetry": {"fail_policy": "fail_open", "opentelemetry": {"role": "observe_local"}},
                 "mcp": {"status": "planned"},
             }
             (repo_root / ".codex" / "securedme-adapter-map.json").write_text(json.dumps(adapter), encoding="utf-8")
@@ -1342,7 +1341,7 @@ class GatewayCliTests(unittest.TestCase):
                 "owner": False,
                 "preserve_neutrosophic_hierarchy": ["I", "I_system^S", "D_f", "dF", "i_fractal"],
             },
-            "telemetry": {"fail_policy": "fail_open", "datadog": {"role": "observe_and_alert"}},
+            "telemetry": {"fail_policy": "fail_open", "opentelemetry": {"role": "observe_local"}},
             "mcp": {"status": "planned"},
         }
 
@@ -1359,7 +1358,7 @@ class GatewayCliTests(unittest.TestCase):
         self.assertIn("token_governor_inactive", codes)
         self.assertIn("future_token_governor_bridge", codes)
 
-    def test_suite_auth_metrics_fail_open_when_datadog_unavailable(self) -> None:
+    def test_suite_auth_metrics_fail_open_when_local_telemetry_unavailable(self) -> None:
         from unittest.mock import patch
 
         modele_root = Path(__file__).resolve().parents[2].parents[0]

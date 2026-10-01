@@ -8,7 +8,19 @@
   "network": "securedme-education-cpai-mesh",
   "image": "codeproject/ai-server:2.9.7",
   "image_digest": "sha256:fff2c957f91bda107df803e7db34257fcf16376a7a1d7e56da4c5363648fb768",
-  "capabilities": ["health", "mesh_status", "object_detection", "yolo"],
-  "telemetry": {"datadog": "async_fail_open", "payload_content": false},
-  "privacy": {"store_images": false, "log_detections": false, "allow_secrets": false}
+  "capabilities": [
+    "health",
+    "mesh_status",
+    "object_detection",
+    "yolo"
+  ],
+  "telemetry": {
+    "payload_content": false,
+    "opentelemetry": "local_optional_fail_open"
+  },
+  "privacy": {
+    "store_images": false,
+    "log_detections": false,
+    "allow_secrets": false
+  }
 }

@@ -3,33 +3,30 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any, Iterable
+from .telemetry import local_metrics_endpoint
 
 
 DEFAULT_OPENCLAW_ENV = Path(os.getenv("OPENCLAW_WORKSPACE_ENV", Path.home() / ".openclaw" / "workspace" / ".env")).resolve()
 DEFAULT_TOOL_ENV_KEYS = (
     "E2B_API_KEY",
-    "DD_API_KEY",
-    "DATADOG_API_KEY",
-    "DD_DOGSTATSD_HOST",
-    "DD_DOGSTATSD_PORT",
+    "SECUREDME_OTEL_ENABLED",
+    "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
 )
 
 
 def qlc_tool_readiness(path: str | Path | None = None) -> dict[str, Any]:
-    """Return redacted local readiness for QLC E2B/Datadog tooling."""
+    """Return redacted readiness; no telemetry connection is attempted."""
 
     env_load = load_openclaw_tool_env(path)
     presence = dict(env_load.get("presence") or {})
-    dogstatsd_host_present = bool(presence.get("DD_DOGSTATSD_HOST") or os.environ.get("DD_DOGSTATSD_HOST"))
-    dogstatsd_port_present = bool(presence.get("DD_DOGSTATSD_PORT") or os.environ.get("DD_DOGSTATSD_PORT"))
     return {
         "success": True,
         "schema": "ffed.qlc.tool_readiness_status.v1",
         "env_load": env_load,
         "e2b_key_present": bool(presence.get("E2B_API_KEY")),
-        "datadog_key_present": bool(presence.get("DD_API_KEY") or presence.get("DATADOG_API_KEY")),
-        "dogstatsd_config_present": dogstatsd_host_present and dogstatsd_port_present,
-        "dogstatsd_reachable": "not_checked",
+        "otel_enabled": os.environ.get("SECUREDME_OTEL_ENABLED", "").lower() == "true",
+        "otel_endpoint_allowed": local_metrics_endpoint(os.environ.get("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://127.0.0.1:4318/v1/metrics")),
+        "otel_reachable": "not_checked",
         "raw_values_printed": False,
     }
 

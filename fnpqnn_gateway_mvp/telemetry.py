@@ -1,9 +1,12 @@
+"""Optional local OTLP counters. Transport failure never grants or denies access."""
 from __future__ import annotations
 
 import os
 import re
-import socket
-from typing import Any, Mapping
+import json
+import time
+from urllib import request
+from urllib.parse import urlsplit
 
 
 GATEWAY_METRICS = {
@@ -26,21 +29,73 @@ def _sanitize(value: str, *, limit: int = 120) -> str:
     return (cleaned[:limit] or "unknown")
 
 
-def emit_dogstatsd_counter(name: str, value: int = 1, tags: tuple[str, ...] = ()) -> bool:
-    host = os.environ.get("DD_DOGSTATSD_HOST", "127.0.0.1")
-    port = int(os.environ.get("DD_DOGSTATSD_PORT", "8125"))
-    safe_name = _sanitize(name, limit=200)
-    safe_tags = [_sanitize(t) for t in tags]
-    tag_suffix = f"|#{','.join(safe_tags)}" if safe_tags else ""
-    payload = f"{safe_name}:{value}|c{tag_suffix}".encode("utf-8")
+ATTRIBUTE_VALUES = {
+    "platform": {"codex", "antigravity"},
+    "decision": {"allow", "block"},
+    "env": {"local", "staging", "production", "education-mvp"},
+    "gateway_mode": {"dry_run", "submit"},
+    "simulator_status": {"not_run", "submit_failed", "success", "ok", "unknown"},
+    "e2b_enabled": {"true", "false"},
+    "route": {"suite-auth-audit", "suite-auth-check", "qlc-submit"},
+}
+
+
+def local_metrics_endpoint(value: str) -> bool:
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            sock.sendto(payload, (host, port))
-        return True
-    except OSError:
+        parsed = urlsplit(value)
+        return bool(parsed.scheme == "http" and parsed.hostname in {"127.0.0.1", "::1"}
+            and parsed.port == 4318 and parsed.path == "/v1/metrics"
+            and not parsed.username and not parsed.password and not parsed.query and not parsed.fragment)
+    except (TypeError, ValueError):
+        return False
+
+
+class _NoRedirect(request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def emit_otel_counter(name: str, value: int = 1, tags: tuple[str, ...] = ()) -> bool:
+    if os.environ.get("SECUREDME_OTEL_ENABLED", "").lower() != "true":
+        return False
+    endpoint = os.environ.get("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://127.0.0.1:4318/v1/metrics")
+    if not local_metrics_endpoint(endpoint) or name not in GATEWAY_METRICS.values():
+        return False
+    if type(value) is not int or not 1 <= value <= 1000:
+        return False
+    attributes = {}
+    for tag in tags[:20]:
+        if not isinstance(tag, str) or len(tag) > 160:
+            continue
+        key, separator, item = tag.partition(":")
+        if separator and item in ATTRIBUTE_VALUES.get(key, set()):
+            attributes[key] = item
+    timestamp = str(time.time_ns())
+    payload = {"resourceMetrics": [{
+        "resource": {"attributes": [{"key": "service.name", "value": {"stringValue": "securedme-education-gateway"}}]},
+        "scopeMetrics": [{"scope": {"name": "securedme.education.gateway", "version": "1"}, "metrics": [{
+            "name": name, "unit": "1", "sum": {
+                "aggregationTemporality": 1, "isMonotonic": True,
+                "dataPoints": [{"asInt": str(value), "startTimeUnixNano": timestamp, "timeUnixNano": timestamp,
+                    "attributes": [{"key": k, "value": {"stringValue": v}} for k, v in sorted(attributes.items())]}],
+            },
+        }]}],
+    }]}
+    try:
+        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        opener = request.build_opener(request.ProxyHandler({}), _NoRedirect())
+        req = request.Request(endpoint, body, {"Content-Type": "application/json", "Accept": "application/json"}, method="POST")
+        with opener.open(req, timeout=0.5) as response:
+            raw = response.read(8193)
+            if len(raw) > 8192 or response.status != 200:
+                return False
+        result = json.loads(raw or b"{}")
+        partial = result.get("partialSuccess", {})
+        return isinstance(partial, dict) and int(partial.get("rejectedDataPoints", 0)) == 0
+    except (OSError, TypeError, ValueError, AttributeError):
         return False
 
 
 def emit_gateway_submit_counter(event: str, tags: list[str] | tuple[str, ...]) -> bool:
-    metric = GATEWAY_METRICS.get(event, event)
-    return emit_dogstatsd_counter(metric, tags=tuple(tags))
+    metric = GATEWAY_METRICS.get(event)
+    return emit_otel_counter(metric, tags=tuple(tags)) if metric else False

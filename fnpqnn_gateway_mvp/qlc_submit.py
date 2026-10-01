@@ -76,7 +76,7 @@ def qlc_submit(
         "route_action": route_action,
         "raw_payload_echoed": False,
         "env_preflight": load_openclaw_tool_env(env_file) if e2b_enabled or emit_metrics else _env_not_loaded(env_file),
-        "datadog_tags": _datadog_tags(qlc_bundle, submission, "dry_run" if dry_run else "submit", "not_run", e2b_enabled),
+        "telemetry_tags": _telemetry_tags(qlc_bundle, submission, "dry_run" if dry_run else "submit", "not_run", e2b_enabled),
     }
     if dry_run:
         base_payload["simulator_status"] = "not_run"
@@ -96,7 +96,7 @@ def qlc_submit(
             "error_type": type(exc).__name__,
             "error": _compact_error(exc),
         }
-        failure["datadog_tags"] = _datadog_tags(qlc_bundle, submission, "submit", "submit_failed", e2b_enabled)
+        failure["telemetry_tags"] = _telemetry_tags(qlc_bundle, submission, "submit", "submit_failed", e2b_enabled)
         failure["loop_receipt"] = build_gateway_loop_receipt(qlc_bundle, {"status": "submit_failed"})
         _maybe_emit_submit_metric("submit_failed", failure, emit_metrics)
         return failure
@@ -111,7 +111,7 @@ def qlc_submit(
         "response_fingerprint": _fingerprint(_compact_simulator_response(response)),
         "loop_receipt": build_gateway_loop_receipt(qlc_bundle, response),
     }
-    payload["datadog_tags"] = _datadog_tags(qlc_bundle, submission, "submit", simulator_status, e2b_enabled)
+    payload["telemetry_tags"] = _telemetry_tags(qlc_bundle, submission, "submit", simulator_status, e2b_enabled)
     _maybe_emit_submit_metric("submit_ok" if accepted else "submit_failed", payload, emit_metrics)
     return payload
 
@@ -213,7 +213,7 @@ def _compact_error(exc: BaseException) -> str:
 
 def _maybe_emit_submit_metric(event: str, payload: Mapping[str, Any], emit_metrics: bool) -> None:
     if emit_metrics:
-        emit_gateway_submit_counter(event, tuple(str(tag) for tag in payload.get("datadog_tags", ())))
+        emit_gateway_submit_counter(event, tuple(str(tag) for tag in payload.get("telemetry_tags", ())))
 
 
 def _post_json(url: str, payload: Mapping[str, Any], timeout: int) -> dict[str, Any]:
@@ -240,7 +240,7 @@ def _compact_simulator_response(response: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _datadog_tags(
+def _telemetry_tags(
     qlc_bundle: Mapping[str, Any],
     submission: Mapping[str, Any],
     gateway_mode: str,

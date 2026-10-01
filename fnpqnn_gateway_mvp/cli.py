@@ -197,7 +197,7 @@ def build_parser() -> argparse.ArgumentParser:
     gateway_qlc.add_argument("--e2b-enabled", action="store_true")
     gateway_qlc.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
     gateway_qlc.add_argument("--emit-metrics", action="store_true")
-    gateway_readiness = gateway_sub.add_parser("qlc-readiness", help="Inspect QLC E2B/Datadog readiness without printing secrets.")
+    gateway_readiness = gateway_sub.add_parser("qlc-readiness", help="Inspect QLC E2B/local OpenTelemetry readiness without printing secrets.")
     gateway_readiness.add_argument("--env-file", default=str(Path.home() / ".openclaw" / "workspace" / ".env"))
     suite_auth_audit_parser = gateway_sub.add_parser("suite-auth-audit", help="Audit all SecuredMe Education auth-enforcer adapters.")
     suite_auth_audit_parser.add_argument("--root", default=".")

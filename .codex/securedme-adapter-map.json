@@ -4,7 +4,7 @@
   "app": {
     "slug": "gateway",
     "name": "Gateway",
-    "path": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
+    "path": "fnpqnn_gateway_MVP",
     "canonical_domain": "gateway.securedme.ca",
     "canonical_route": "https://securedme.ca/education/apps/gateway/",
     "status": "pre-alpha"
@@ -42,9 +42,9 @@
     "RagGgE_Innovation_and_Technology_Selection"
   ],
   "gateway": {
-    "webauth_source": "FNP-QNN-MVP/fnpqnn_gateway_MVP",
-    "token_governor_bridge": "FNP-QNN-MVP/fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/token_governor.py",
-    "auth_enforcer_bridge": "FNP-QNN-MVP/fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/suite_auth.py"
+    "webauth_source": "fnpqnn_gateway_MVP",
+    "token_governor_bridge": "fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/token_governor.py",
+    "auth_enforcer_bridge": "fnpqnn_gateway_MVP/fnpqnn_gateway_mvp/suite_auth.py"
   },
   "auth_enforcer": {
     "version": "securedme.education.auth-enforcer.v1",
@@ -69,11 +69,12 @@
   },
   "telemetry": {
     "fail_policy": "fail_open",
-    "datadog": {
-      "role": "observe_and_alert",
-      "metric_namespace": "securedme.education.auth",
+    "opentelemetry": {
+      "role": "observe_local",
+      "enabled_by_default": false,
+      "endpoint": "http://127.0.0.1:4318/v1/metrics",
       "no_inline_blocking": true,
-      "redacted_only": true
+      "technical_metadata_only": true
     }
   },
   "mcp": {

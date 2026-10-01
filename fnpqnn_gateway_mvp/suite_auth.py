@@ -188,7 +188,7 @@ def _embedded_adapter_map(expected: SuiteRepo) -> dict[str, Any]:
         },
         "telemetry": {
             "fail_policy": "fail_open",
-            "datadog": {"role": "observe_and_alert"},
+            "opentelemetry": {"role": "observe_local"},
         },
         "mcp": {"status": "planned"},
     }
@@ -265,9 +265,9 @@ def _validate_adapter_map(adapter_map: dict[str, Any] | None, expected: SuiteRep
     telemetry = adapter_map.get("telemetry", {})
     if telemetry.get("fail_policy") != "fail_open":
         errors.append(_error("telemetry_fail_policy", "telemetry fail_policy must be fail_open"))
-    datadog = telemetry.get("datadog", {})
-    if datadog.get("role") != "observe_and_alert":
-        errors.append(_error("datadog_role", "Datadog role must be observe_and_alert"))
+    observability = telemetry.get("opentelemetry", {})
+    if observability.get("role") != "observe_local":
+        errors.append(_error("observability_role", "OpenTelemetry role must be observe_local"))
     if adapter_map.get("mcp", {}).get("status") != "planned":
         errors.append(_error("mcp_status", "mcp.status must remain planned until connected"))
     return errors
@@ -284,7 +284,7 @@ def _adapter_summary(adapter_map: dict[str, Any] | None) -> dict[str, Any]:
         "auth_enforcer_owner": auth_enforcer.get("owner"),
         "token_governor_active": bool(adapter_map.get("gateway", {}).get("token_governor_bridge")),
         "telemetry_fail_policy": telemetry.get("fail_policy"),
-        "datadog_role": telemetry.get("datadog", {}).get("role"),
+        "observability_role": telemetry.get("opentelemetry", {}).get("role"),
         "mcp_status": adapter_map.get("mcp", {}).get("status"),
     }
 
@@ -405,7 +405,7 @@ def suite_auth_check(
             "adapter_map_present": adapter_path.exists() or bool(adapter_map),
             "token_governor_active": bool(adapter_map and adapter_map.get("gateway", {}).get("token_governor_bridge")),
             "raw_secret_stored": False,
-            "datadog_fail_open": bool(adapter_map and adapter_map.get("telemetry", {}).get("fail_policy") == "fail_open"),
+            "telemetry_fail_open": bool(adapter_map and adapter_map.get("telemetry", {}).get("fail_policy") == "fail_open"),
         },
         "telemetry": {
             "enabled": emit_metrics,
@@ -474,7 +474,7 @@ def suite_auth_audit(
             "failed_surfaces": len(failed),
             "platforms": list(PLATFORMS),
             "raw_secret_stored": False,
-            "datadog_role": "observe_and_alert",
+            "observability_role": "observe_local",
             "telemetry_fail_policy": "fail_open",
         },
         "raw_secret_stored": False,
