@@ -1307,8 +1307,11 @@ class GatewayCliTests(unittest.TestCase):
         self.assertIn("template_missing", {error["code"] for error in check["errors"]})
 
     def test_suite_auth_check_does_not_use_embedded_contracts_by_default(self) -> None:
-        modele_root = Path(__file__).resolve().parents[2].parents[0]
-        check = suite_auth_check("fnpqnn_gateway_MVP", "codex", root=modele_root)
+        import tempfile
+
+        # An explicitly empty suite is independent of checkout layout and OS.
+        with tempfile.TemporaryDirectory() as root:
+            check = suite_auth_check("fnpqnn_gateway_MVP", "codex", root=root)
 
         self.assertFalse(check["success"])
         self.assertIn("repo_missing", {error["code"] for error in check["errors"]})

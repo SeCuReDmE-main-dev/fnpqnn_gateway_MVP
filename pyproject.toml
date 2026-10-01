@@ -24,6 +24,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0,<10.0.0",
+  "pytest-subtests>=0.14.0,<1.0.0",
+]
 cloud = [
   "e2b>=1.0.0",
   "e2b-code-interpreter>=1.0.0",

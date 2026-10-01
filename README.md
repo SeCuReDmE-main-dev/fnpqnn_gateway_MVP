@@ -10,7 +10,9 @@
 
 Inspect and enforce shared sessions, allowed tools, consent and bounded specialist handoffs.
 
-[Public surface](https://gateway.securedme.ca/) · [Tool documentation](https://securedme-main-dev.github.io/securedme-scholarium/en/tools/fnpqnn-gateway/) · [Education hub](https://securedme.ca/product/education/)
+[Tool documentation](https://securedme-main-dev.github.io/securedme-scholarium/en/tools/fnpqnn-gateway/) · [Education hub](https://securedme.ca/product/education/)
+
+Runtime: local development; the public Education hub lists no public runtime for this tool.
 
 **Status:** pre-alpha, active public development. Public pages and a successful local test do not establish a deployed school service. E2B sponsorship recognition is separate from runtime availability and included quota.
 
